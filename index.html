@@ -51,17 +51,17 @@
     backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
     box-shadow:0 2px 24px rgba(0,0,0,.45);
   }
-  .brand{display:flex; align-items:center; gap:11px; min-width:0}
+  .brand{display:flex; align-items:center; gap:11px; min-width:0; flex:1 1 auto; overflow:hidden}
   .sigil{
     width:92px;height:92px;flex:0 0 auto;display:grid;place-items:center;
     filter:drop-shadow(0 5px 16px rgba(91,140,255,.6));
   }
   .sigil img{width:100%;height:100%;object-fit:contain;display:block}
-  .brand h1{margin:0;line-height:0;display:flex}
-  .brand h1 img{height:64px;width:auto;display:block;filter:drop-shadow(0 1px 0 #000) drop-shadow(0 0 20px rgba(232,200,120,.5)) drop-shadow(0 0 32px rgba(123,107,255,.4))}
+  .brand h1{margin:0;line-height:0;display:flex;min-width:0;max-width:100%;overflow:hidden}
+  .brand h1 img{max-height:64px;width:auto;height:auto;max-width:100%;display:block;filter:drop-shadow(0 1px 0 #000) drop-shadow(0 0 20px rgba(232,200,120,.5)) drop-shadow(0 0 32px rgba(123,107,255,.4))}
   .brand p{margin:5px 0 0;font-family:var(--rune);font-size:14.5px;letter-spacing:1px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
   .spacer{flex:1}
-  .hbtns{display:flex;gap:8px;align-items:center}
+  .hbtns{display:flex;gap:8px;align-items:center;flex:0 0 auto}
   button{font-family:inherit;cursor:pointer}
   .btn{
     background:var(--navy2); color:var(--fg); border:1px solid var(--line2);
@@ -192,18 +192,22 @@
 
   /* responsive */
   @media (max-width:620px){
-    header{gap:11px;padding:10px 12px}
-    .brand h1 img{height:48px}
+    header{gap:8px;padding:10px 12px}
+    .brand{gap:9px}
+    .brand h1 img{max-height:42px}
     .brand p{display:none}
-    .sigil{width:70px;height:70px}
+    .sigil{width:56px;height:56px}
     #openSandbox .lbl{display:none}
     main{padding:8px 8px 6px}
     .frame{border-radius:14px}
     #chat{padding:15px 12px 6px}
     .btn{padding:8px 10px}
   }
-  @media (max-width:400px){
-    .lang button{padding:6px 8px}
+  @media (max-width:430px){
+    .brand h1 img{max-height:34px}
+    .sigil{width:46px;height:46px}
+    .lang button{padding:6px 7px;font-size:11px}
+    .btn{padding:7px 8px}
     .hbtns{gap:6px}
     .footer{font-size:9px}
   }
