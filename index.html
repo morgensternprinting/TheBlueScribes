@@ -6,7 +6,7 @@
 <title>The Blue Scribes — TOW Rules Chatbot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@700;900&family=Pirata+One&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
 <style>
   :root{
     /* arcane blue (Tzeentch) */
@@ -22,7 +22,7 @@
     --radius:14px; --shadow:0 20px 55px rgba(0,0,0,.55);
     --serif:'EB Garamond', Georgia, 'Times New Roman', serif;
     --rune:'Cinzel', Georgia, serif;
-    --title:'Cinzel Decorative','Cinzel', Georgia, serif;
+    --title:'Pirata One','Cinzel Decorative', Georgia, serif;
   }
   *{box-sizing:border-box}
   html{height:100%}
@@ -46,23 +46,23 @@
   a{color:var(--accent);text-decoration-color:rgba(91,140,255,.4)}
 
   header{
-    flex:0 0 auto; display:flex; align-items:center; gap:12px; padding:11px 16px;
+    flex:0 0 auto; display:flex; align-items:center; gap:14px; padding:13px 18px;
     background:linear-gradient(180deg,rgba(9,16,42,.94),rgba(9,16,42,.62));
     backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
     box-shadow:0 2px 24px rgba(0,0,0,.45);
   }
   .brand{display:flex; align-items:center; gap:11px; min-width:0}
   .sigil{
-    width:48px;height:48px;flex:0 0 auto;display:grid;place-items:center;
-    filter:drop-shadow(0 3px 9px rgba(91,140,255,.55));
+    width:66px;height:66px;flex:0 0 auto;display:grid;place-items:center;
+    filter:drop-shadow(0 4px 12px rgba(91,140,255,.6));
   }
   .sigil img{width:100%;height:100%;object-fit:contain;display:block}
   .brand h1{
-    font-family:var(--title); font-weight:700; font-size:19px; margin:0; line-height:1.05;
-    letter-spacing:.5px; color:var(--gold);
-    text-shadow:0 1px 0 #000,0 0 16px rgba(232,200,120,.35);
+    font-family:var(--title); font-weight:400; font-size:32px; margin:0; line-height:1;
+    letter-spacing:1px; color:var(--gold);
+    text-shadow:0 1px 0 #000, 0 0 20px rgba(232,200,120,.45), 0 0 32px rgba(123,107,255,.35);
   }
-  .brand p{margin:1px 0 0;font-family:var(--rune);font-size:11px;letter-spacing:.6px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
+  .brand p{margin:3px 0 0;font-family:var(--rune);font-size:11.5px;letter-spacing:.8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
   .spacer{flex:1}
   .hbtns{display:flex;gap:8px;align-items:center}
   button{font-family:inherit;cursor:pointer}
@@ -195,10 +195,10 @@
 
   /* responsive */
   @media (max-width:620px){
-    header{gap:9px;padding:10px 12px}
-    .brand h1{font-size:17px}
+    header{gap:11px;padding:10px 12px}
+    .brand h1{font-size:24px}
     .brand p{display:none}
-    .sigil{width:38px;height:38px;font-size:19px}
+    .sigil{width:52px;height:52px}
     #openSandbox .lbl{display:none}
     main{padding:8px 8px 6px}
     .frame{border-radius:14px}
@@ -221,7 +221,7 @@
     <div class="sigil"><img src="assets/logo.png" alt="The Blue Scribes"></div>
     <div style="min-width:0">
       <h1>The Blue Scribes</h1>
-      <p data-i18n="tagline">Assistant de règles — Warhammer: The Old World</p>
+      <p data-i18n="tagline">Oracle démoniaque des règles · The Old World</p>
     </div>
   </div>
   <div class="spacer"></div>
@@ -302,7 +302,7 @@ const LS_LANG = "tow_blue_scribes_lang";
 /* ---------- i18n (UI chrome only; the bot replies in the question's language) ---------- */
 const I18N = {
   fr: {
-    tagline: "Assistant de règles — Warhammer: The Old World",
+    tagline: "Oracle démoniaque des règles · The Old World",
     sandbox: "Bac à sable",
     placeholder: "Posez votre question de règles…",
     enterhint: "Entrée pour envoyer · Maj+Entrée pour un saut de ligne",
@@ -338,7 +338,7 @@ const I18N = {
     readingBy: "Xirat'p lit votre demande…",
   },
   en: {
-    tagline: "Rules assistant — Warhammer: The Old World",
+    tagline: "Daemonic rules oracle · The Old World",
     sandbox: "Sandbox",
     placeholder: "Ask your rules question…",
     enterhint: "Enter to send · Shift+Enter for a new line",
