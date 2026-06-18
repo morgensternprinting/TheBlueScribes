@@ -594,6 +594,10 @@ function updateAuthUI(){
     if(inp) inp.placeholder="sk-ant-...";
     if(clr) clr.textContent=t("clearKey");
   }
+  // When the proxy URL is baked into the code, no one needs to enter it —
+  // hide the advanced proxy section entirely.
+  const adv=document.querySelector("#settingsOverlay .adv");
+  if(adv) adv.style.display = PROXY_URL ? "none" : "";
 }
 
 /* ---------- conversation state ---------- */
