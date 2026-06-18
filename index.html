@@ -178,6 +178,9 @@
   .note a{color:var(--accent)}
   .keystate{font-size:13px;margin-top:8px}
   .keystate.ok{color:var(--ok)}.keystate.no{color:var(--gold)}
+  .adv{margin-top:16px;border-top:1px solid var(--line2);padding-top:12px}
+  .adv summary{cursor:pointer;color:var(--muted);font-family:var(--rune);font-size:12px;letter-spacing:.5px;text-transform:uppercase;list-style:revert}
+  .adv summary:hover{color:var(--accent)}
 
   .sb-empty{color:var(--muted);text-align:center;padding:22px;font-size:14px;font-style:italic}
   .sb-item{border:1px solid var(--line2);border-radius:12px;padding:12px;margin-bottom:11px;background:#0e1c44}
@@ -267,6 +270,17 @@
         <button class="btn warn" id="clearKey" data-i18n="clearKey">Effacer la clé</button>
       </div>
       <div class="note" data-i18n="keyNote"></div>
+
+      <details class="adv">
+        <summary data-i18n="advProxy">Avancé — proxy (clé cachée)</summary>
+        <label class="fld" for="proxyUrl" data-i18n="proxyLabel" style="margin-top:8px">URL du proxy (Cloudflare Worker)</label>
+        <input type="text" id="proxyUrl" placeholder="https://…workers.dev" spellcheck="false">
+        <div class="row">
+          <button class="btn primary" id="saveProxy" data-i18n="saveProxyBtn">Activer le proxy</button>
+          <button class="btn ghost" id="clearProxy" data-i18n="clearProxyBtn">Désactiver</button>
+        </div>
+        <div class="note" data-i18n="proxyNote"></div>
+      </details>
     </div>
   </div>
 </div>
@@ -303,15 +317,21 @@
 
 const MODEL = "claude-opus-4-8";
 
-// ↓↓↓ Set this to your deployed Worker URL to use YOUR hidden key (proxy mode).
-//     Leave "" for bring-your-own-key mode. The URL itself is not a secret.
+// Optional hardcoded default Worker URL for proxy mode (YOUR hidden key).
+// You can ALSO set it at runtime from ⚙️ Settings → Advanced (no code edit /
+// redeploy needed). Leave "" and unset in Settings for bring-your-own-key mode.
+// The URL itself is not a secret.
 const PROXY_URL = ""; // e.g. "https://blue-scribes-proxy.<your-subdomain>.workers.dev"
-const USE_PROXY = !!PROXY_URL;
 
 const LS_KEY = "tow_blue_scribes_key";
 const LS_PW  = "tow_blue_scribes_pw";
+const LS_PROXY = "tow_blue_scribes_proxy";
 const LS_SANDBOX = "tow_blue_scribes_sandbox";
 const LS_LANG = "tow_blue_scribes_lang";
+
+// Proxy URL/mode are resolved at call time (runtime-settable from Settings).
+function proxyUrl(){ return (localStorage.getItem(LS_PROXY) || PROXY_URL || "").trim(); }
+function useProxy(){ return !!proxyUrl(); }
 
 /* ---------- i18n (UI chrome only; the bot replies in the question's language) ---------- */
 const I18N = {
@@ -351,6 +371,11 @@ const I18N = {
     pwNo: "Aucun mot de passe — saisis-le pour démarrer.",
     needPw: "Saisis d'abord le mot de passe d'accès (bouton ⚙️) pour discuter avec les Scribes.",
     confirmClearPw: "Effacer le mot de passe enregistré ?",
+    advProxy: "Avancé — proxy (clé cachée)",
+    proxyLabel: "URL du proxy (Cloudflare Worker)",
+    saveProxyBtn: "Activer le proxy",
+    clearProxyBtn: "Désactiver",
+    proxyNote: "Colle l'URL de ton Worker pour activer le mode proxy : la clé Anthropic reste cachée côté serveur et le champ ci-dessus demande alors le <strong>mot de passe d'accès</strong> (au lieu d'une clé API). Laisse vide pour le mode clé perso.",
     confirmClearSb: "Effacer toutes les entrées du bac à sable ?",
     confirmDel: "Supprimer cette entrée ?",
     savedToast: "Conservé au bac à sable.",
@@ -395,6 +420,11 @@ const I18N = {
     pwNo: "No password — enter it to begin.",
     needPw: "Enter the access password first (⚙️ button) to talk to the Scribes.",
     confirmClearPw: "Clear the saved password?",
+    advProxy: "Advanced — proxy (hidden key)",
+    proxyLabel: "Proxy URL (Cloudflare Worker)",
+    saveProxyBtn: "Enable proxy",
+    clearProxyBtn: "Disable",
+    proxyNote: "Paste your Worker URL to enable proxy mode: the Anthropic key stays hidden server-side and the field above then asks for the <strong>access password</strong> (instead of an API key). Leave empty for bring-your-own-key mode.",
     confirmClearSb: "Clear all sandbox entries?",
     confirmDel: "Delete this entry?",
     savedToast: "Kept in the sandbox.",
@@ -541,19 +571,19 @@ function getKey(){ return localStorage.getItem(LS_KEY) || ""; }
 function setKey(k){ if(k) localStorage.setItem(LS_KEY,k); else localStorage.removeItem(LS_KEY); refreshKeyState(); }
 function getPassword(){ return localStorage.getItem(LS_PW) || ""; }
 function setPassword(p){ if(p) localStorage.setItem(LS_PW,p); else localStorage.removeItem(LS_PW); refreshKeyState(); }
-function getCred(){ return USE_PROXY ? getPassword() : getKey(); }
-function setCred(v){ return USE_PROXY ? setPassword(v) : setKey(v); }
+function getCred(){ return useProxy() ? getPassword() : getKey(); }
+function setCred(v){ return useProxy() ? setPassword(v) : setKey(v); }
 function refreshKeyState(){
   const ks = $("#keyState");
-  if(getCred()){ ks.textContent = t(USE_PROXY?"pwOk":"keyOk"); ks.className="keystate ok"; }
-  else { ks.textContent = t(USE_PROXY?"pwNo":"keyNo"); ks.className="keystate no"; }
+  if(getCred()){ ks.textContent = t(useProxy()?"pwOk":"keyOk"); ks.className="keystate ok"; }
+  else { ks.textContent = t(useProxy()?"pwNo":"keyNo"); ks.className="keystate no"; }
 }
 /* Swap the Settings labels/notes between API-key mode and password mode. */
 function updateAuthUI(){
   const lab=document.querySelector("label[for=apiKey]");
   const note=document.querySelector("#settingsOverlay .note");
   const inp=$("#apiKey"); const clr=$("#clearKey");
-  if(USE_PROXY){
+  if(useProxy()){
     if(lab) lab.textContent=t("pwLabel");
     if(note) note.innerHTML=t("pwNote");
     if(inp) inp.placeholder=t("pwPh");
@@ -618,7 +648,7 @@ function showWelcome(){
   }));
   if(!getCred()){
     const h = document.createElement("div");
-    h.className="hint"; h.textContent = t(USE_PROXY?"needPw":"needKey");
+    h.className="hint"; h.textContent = t(useProxy()?"needPw":"needKey");
     chat.appendChild(h);
   }
 }
@@ -672,8 +702,8 @@ async function streamOnce(apiMessages, onText, onThinking){
   };
   // Proxy mode → call your Worker (which adds the hidden key server-side).
   // BYO mode  → call the Anthropic API directly with the user's own key.
-  const url = USE_PROXY ? PROXY_URL : "https://api.anthropic.com/v1/messages";
-  const headers = USE_PROXY
+  const url = useProxy() ? proxyUrl() : "https://api.anthropic.com/v1/messages";
+  const headers = useProxy()
     ? { "content-type":"application/json", "x-app-password": getPassword() }
     : { "content-type":"application/json", "x-api-key": getKey(),
         "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" };
@@ -749,7 +779,7 @@ async function streamOnce(apiMessages, onText, onThinking){
 function handleApiError(err, bubble){
   let msg;
   const s = err.status;
-  if(s===401) msg = USE_PROXY
+  if(s===401) msg = useProxy()
     ? (LANG==="fr"? "Mot de passe d'accès invalide. Vérifie-le dans ⚙️ Réglages." : "Invalid access password. Check it under ⚙️ Settings.")
     : (LANG==="fr"? "Clé API invalide. Vérifiez-la dans ⚙️ Réglages." : "Invalid API key. Check it under ⚙️ Settings.");
   else if(s===429) msg = LANG==="fr"? "Limite de débit atteinte (429). Réessayez dans un instant." : "Rate limited (429). Try again shortly.";
@@ -876,7 +906,7 @@ function renderSandbox(){
 }
 
 /* ---------- modals ---------- */
-function openSettings(){ updateAuthUI(); $("#apiKey").value=getCred(); refreshKeyState(); $("#settingsOverlay").classList.add("show"); }
+function openSettings(){ updateAuthUI(); $("#apiKey").value=getCred(); $("#proxyUrl").value=localStorage.getItem(LS_PROXY)||""; refreshKeyState(); $("#settingsOverlay").classList.add("show"); }
 function openSandbox(){ renderSandbox(); $("#sandboxOverlay").classList.add("show"); }
 document.querySelectorAll("[data-close]").forEach(b=> b.addEventListener("click", e=> e.target.closest(".overlay").classList.remove("show")));
 document.querySelectorAll(".overlay").forEach(o=> o.addEventListener("click", e=>{ if(e.target===o) o.classList.remove("show"); }));
@@ -884,7 +914,17 @@ document.querySelectorAll(".overlay").forEach(o=> o.addEventListener("click", e=
 $("#openSettings").addEventListener("click", openSettings);
 $("#openSandbox").addEventListener("click", openSandbox);
 $("#saveKey").addEventListener("click", ()=>{ setCred($("#apiKey").value.trim()); const w=chat.querySelector(".hint"); if(w) w.remove(); });
-$("#clearKey").addEventListener("click", ()=>{ if(confirm(t(USE_PROXY?"confirmClearPw":"confirmClearKey"))){ $("#apiKey").value=""; setCred(""); } });
+$("#clearKey").addEventListener("click", ()=>{ if(confirm(t(useProxy()?"confirmClearPw":"confirmClearKey"))){ $("#apiKey").value=""; setCred(""); } });
+$("#saveProxy").addEventListener("click", ()=>{
+  const v=$("#proxyUrl").value.trim();
+  if(v) localStorage.setItem(LS_PROXY,v); else localStorage.removeItem(LS_PROXY);
+  updateAuthUI(); $("#apiKey").value=getCred(); refreshKeyState();
+  const w=chat.querySelector(".hint"); if(w) w.remove();
+});
+$("#clearProxy").addEventListener("click", ()=>{
+  localStorage.removeItem(LS_PROXY); $("#proxyUrl").value="";
+  updateAuthUI(); $("#apiKey").value=getCred(); refreshKeyState();
+});
 $("#sbClear").addEventListener("click", ()=>{ if(confirm(t("confirmClearSb"))){ saveSandbox([]); renderSandbox(); } });
 $("#sbExport").addEventListener("click", ()=>{
   const blob = new Blob([JSON.stringify(loadSandbox(),null,2)], {type:"application/json"});
