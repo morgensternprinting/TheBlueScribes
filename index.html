@@ -324,10 +324,12 @@ const I18N = {
     needKey: "Ajoutez d'abord votre clé API Anthropic (bouton ⚙️) pour discuter avec les Scribes.",
     welcomeH: "Bienvenue, stratège.",
     welcomeP: "Je suis l'un des <strong>Scribes Bleus</strong>. Posez-moi vos questions sur les règles de <em>The Old World</em> : règles spéciales, objets magiques, lores de magie, interactions de phase… En cas de doute je demanderai des précisions. Et si une question dépasse mes archives, je vous féliciterai et garderai votre réponse au bac à sable.",
-    exReroll: "Comment fonctionne Killing Blow ?",
-    exFear: "Différence entre Peur et Terreur ?",
+    exReroll: "Comment fonctionne le Coup fatal (Killing Blow) ?",
+    exFear: "Quelle différence entre Peur et Terreur ?",
     exMagic: "Que fait le sort Drain Magic ?",
-    exClarify: "Mon unité en fuite peut-elle se rallier ?",
+    exClarify: "Une unité en fuite peut-elle se rallier ?",
+    exCharge: "Comment résoudre une charge et ses réactions ?",
+    exArmor: "Comment se calcule la sauvegarde d'armure ?",
     confirmClearKey: "Effacer la clé API enregistrée ?",
     confirmClearSb: "Effacer toutes les entrées du bac à sable ?",
     confirmDel: "Supprimer cette entrée ?",
@@ -359,9 +361,11 @@ const I18N = {
     welcomeH: "Welcome, strategist.",
     welcomeP: "I am one of the <strong>Blue Scribes</strong>. Ask me anything about <em>The Old World</em> rules: special rules, magic items, lores of magic, phase interactions… If I'm unsure I'll ask for clarification. And if a question goes beyond my archives, I'll congratulate you and keep your answer in the sandbox.",
     exReroll: "How does Killing Blow work?",
-    exFear: "Difference between Fear and Terror?",
+    exFear: "What's the difference between Fear and Terror?",
     exMagic: "What does the Drain Magic spell do?",
-    exClarify: "Can my fleeing unit rally?",
+    exClarify: "Can a fleeing unit rally?",
+    exCharge: "How do I resolve a charge and its reactions?",
+    exArmor: "How is the armour save calculated?",
     confirmClearKey: "Clear the saved API key?",
     confirmClearSb: "Clear all sandbox entries?",
     confirmDel: "Delete this entry?",
@@ -539,7 +543,9 @@ function showWelcome(){
     <div class="chips">
       <button class="chip" type="button">${t("exReroll")}</button>
       <button class="chip" type="button">${t("exFear")}</button>
+      <button class="chip" type="button">${t("exCharge")}</button>
       <button class="chip" type="button">${t("exMagic")}</button>
+      <button class="chip" type="button">${t("exArmor")}</button>
       <button class="chip" type="button">${t("exClarify")}</button>
     </div>`;
   chat.appendChild(w);
