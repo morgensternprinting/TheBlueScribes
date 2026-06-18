@@ -473,6 +473,19 @@ function buildKnowledgeText(){
   for(const a of Object.keys(KB.armyLores)){
     lines.push(`- ${a}: ${(KB.armyLores[a]||[]).join(", ")}`);
   }
+  if(KB.units){
+    lines.push("\n### UNITS (slug | name EN / FR | army | type | points | profile [M/WS/BS/S/T/W/I/A/Ld] | equipment | special rules)");
+    for(const k of Object.keys(KB.units)){
+      const u = KB.units[k];
+      const nm = u.name_fr ? `${u.name_en} / ${u.name_fr}` : u.name_en;
+      let l = `- ${k} | ${nm} | ${u.army||""} | ${u.type||""}`;
+      if(u.points!=null) l += ` | ${u.points} pts`;
+      if(u.profile) l += ` | ${u.profile}`;
+      if(u.equipment) l += ` | equip: ${u.equipment}`;
+      if(u.rules) l += ` | rules: ${u.rules}`;
+      lines.push(l);
+    }
+  }
   return lines.join("\n");
 }
 const KNOWLEDGE_TEXT = buildKnowledgeText();
@@ -500,7 +513,8 @@ Write AS P'tarix (you may say "we"/"nous" for the pair): haughty and condescendi
 The pomp and the squabbling are flavour only — never fabricate a rule for the sake of a flourish.
 
 # Your knowledge base
-Below this section you are given a KNOWLEDGE BASE: the game's universal and army special rules, magic items, and the magic lores available to each army, extracted from a community reference. Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
+Below this section you are given a KNOWLEDGE BASE: the game's universal and army special rules, magic items, the magic lores available to each army, and a UNITS list (English + French names, army, troop type, points, the M/WS/BS/S/T/W/I/A/Ld profile, equipment list and special rules). Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
+IMPORTANT — what the UNITS data does NOT contain: it lists each unit's equipment/weapons by NAME only. It does NOT include weapon stat-lines — no Range, no weapon Strength, no Armour Piercing, no "to-hit"/shots profile for shooting weapons. So if a mortal asks for a weapon's exact range, Strength, AP or shots (e.g. the range of the Canon Apocalypse / Hellcannon's Doomfire), and it is not present, you do NOT have it: treat it as an Old-World question you cannot answer (admire, promise, and collect via the sandbox) — NEVER invent a range or weapon stat. You may still give everything you DO have (army, points, profile, special rules, the weapon's name).
 
 # How to answer
 - Answer rules questions accurately and concisely. Lead with the direct answer, then add only the supporting detail that matters. Name the exact rule(s) you are relying on (e.g. "Killing Blow", "Fear"). Do NOT include any hyperlinks, URLs or external references in your answers.

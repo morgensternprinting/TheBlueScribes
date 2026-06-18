@@ -35,9 +35,10 @@ if (!fs.existsSync(SRC)) {
 
 const html = fs.readFileSync(SRC, 'utf8');
 
-// Brace-match an object literal starting at the `{` that follows `const NAME =`.
+// Brace-match an object literal starting at the `{` that follows the declaration
+// of `varName` (supports `const/let/var NAME = {` and `window.NAME = {`).
 function extractObjectLiteral(source, varName) {
-  const decl = new RegExp('const\\s+' + varName + '\\s*=\\s*\\{');
+  const decl = new RegExp('(?:(?:const|let|var)\\s+|window\\.)' + varName + '\\s*=\\s*\\{');
   const m = decl.exec(source);
   if (!m) return null;
   const start = source.indexOf('{', m.index);
@@ -103,6 +104,47 @@ for (const cat of Object.keys(magicItems)) {
   }
 }
 
+// ── Units ─────────────────────────────────────────────────────────────────
+// UNIT_DB holds the rich profiles (stats, troop type, equipment, special rules);
+// OWB_UNIT_DATA (the builder dataset) adds French names + points cost. Merge by
+// slug. NOTE: neither source stores weapon stat-lines (range / Strength / AP for
+// shooting weapons), so those are simply not available.
+const unitDb = evalLiteral(extractObjectLiteral(html, 'UNIT_DB'), 'UNIT_DB');
+const builder = evalLiteral(extractObjectLiteral(html, 'OWB_UNIT_DATA'), 'OWB_UNIT_DATA');
+
+const STAT_KEYS = ['M', 'WS', 'BS', 'S', 'T', 'W', 'I', 'A', 'Ld'];
+function profileStr(profiles) {
+  if (!Array.isArray(profiles)) return '';
+  return profiles.map(p => `${p.name || ''} [${STAT_KEYS.map(k => (p[k] != null && p[k] !== '' ? p[k] : '-')).join('/')}]`).join('; ');
+}
+function rulesStr(sr) {
+  if (Array.isArray(sr)) return sr.map(r => (typeof r === 'string' ? r : (r && r.name) || '')).filter(Boolean).join(', ');
+  if (typeof sr === 'string') return sr;
+  return '';
+}
+
+const units = {};
+for (const slug of Object.keys(unitDb)) {
+  const u = unitDb[slug];
+  units[slug] = {
+    name_en: stripLinks(u.name || slug),
+    army: u.army || '',
+    type: u.troopType || u.category || '',
+    profile: profileStr(u.profiles),
+    equipment: Array.isArray(u.equipment) ? u.equipment.join(', ') : '',
+    rules: stripLinks(rulesStr(u.specialRules)),
+  };
+}
+// enrich with / add French names + points from the builder dataset
+for (const id of Object.keys(builder)) {
+  const o = builder[id];
+  const ex = units[id] || (units[id] = { name_en: stripLinks(o.name_en || id), army: o.army || '', type: o.category || '', profile: '', equipment: '', rules: '' });
+  if (o.name_fr) ex.name_fr = stripLinks(o.name_fr);
+  if (o.points != null) ex.points = o.points;
+  if (!ex.rules && o.specialRules) ex.rules = stripLinks(rulesStr(o.specialRules));
+  if (!ex.equipment && Array.isArray(o.equip)) ex.equipment = o.equip.map(e => e.name_en || e.name_fr || '').filter(Boolean).join(' | ');
+}
+
 // Count magic items (nested: category -> army -> [items])
 let miCount = 0;
 for (const cat of Object.keys(magicItems)) {
@@ -120,6 +162,7 @@ const meta = {
     magicItemCategories: Object.keys(magicItems).length,
     magicItems: miCount,
     armyLores: Object.keys(armyLores).length,
+    units: Object.keys(units).length,
   },
 };
 
@@ -134,7 +177,7 @@ const banner =
 const payload =
   banner +
   'window.TOW_RULES = ' +
-  JSON.stringify({ rules, magicItems, armyLores, meta }, null, 0) +
+  JSON.stringify({ rules, magicItems, armyLores, units, meta }, null, 0) +
   ';\n';
 
 fs.writeFileSync(OUT, payload);
@@ -142,3 +185,4 @@ console.log('Wrote ' + OUT);
 console.log('  rules:        ' + meta.counts.rules);
 console.log('  magic items:  ' + meta.counts.magicItems + ' (' + meta.counts.magicItemCategories + ' categories)');
 console.log('  army lores:   ' + meta.counts.armyLores);
+console.log('  units:        ' + meta.counts.units);
