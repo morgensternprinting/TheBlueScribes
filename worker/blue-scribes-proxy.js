@@ -46,6 +46,7 @@ export default {
     //     sends x-new-turn:"1" on the first call of a turn, not on tool-loop
     //     continuations). Requires a KV namespace bound as RATE_LIMIT; if it is
     //     not configured, limiting is silently skipped.
+    let rlLimit = null, rlRemaining = null;
     if (env.RATE_LIMIT && request.headers.get("x-new-turn") === "1") {
       const limit = Number(env.DAILY_LIMIT) || 3;
       const ip = request.headers.get("CF-Connecting-IP") || "unknown";
@@ -53,10 +54,12 @@ export default {
       const key = `rl:${day}:${ip}`;
       const used = Number(await env.RATE_LIMIT.get(key)) || 0;
       if (used >= limit) {
-        return json({ error: { message: `Daily question limit reached (${limit}/day).`, code: "rate_limited_daily", limit } }, 429, cors);
+        return json({ error: { message: `Daily question limit reached (${limit}/day).`, code: "rate_limited_daily", limit, remaining: 0 } }, 429, cors);
       }
       // Best-effort increment (KV is eventually consistent — fine for a soft cap).
       await env.RATE_LIMIT.put(key, String(used + 1), { expirationTtl: 172800 });
+      rlLimit = limit;
+      rlRemaining = Math.max(0, limit - (used + 1));
     }
 
     // 2) Parse the client body and rebuild the upstream request. Only the
@@ -90,6 +93,10 @@ export default {
     const headers = new Headers(cors);
     headers.set("content-type", upstream.headers.get("content-type") || "text/event-stream; charset=utf-8");
     headers.set("cache-control", "no-store");
+    if (rlRemaining !== null) {
+      headers.set("x-questions-remaining", String(rlRemaining));
+      headers.set("x-questions-limit", String(rlLimit));
+    }
     return new Response(upstream.body, { status: upstream.status, headers });
   },
 };
@@ -99,6 +106,7 @@ function corsHeaders(env) {
     "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN || "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "content-type, x-app-password, x-new-turn",
+    "Access-Control-Expose-Headers": "x-questions-remaining, x-questions-limit",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin",
   };

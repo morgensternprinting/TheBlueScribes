@@ -158,6 +158,8 @@
   .send:hover{box-shadow:0 0 16px rgba(123,107,255,.6)}
   .send:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
   .composer-note{font-family:var(--rune);font-size:10.5px;letter-spacing:.4px;color:var(--ink-faint);text-align:center;padding-top:8px}
+  .quota{font-family:var(--rune);font-size:11px;letter-spacing:.5px;color:var(--gold-deep);text-align:center;padding-top:5px}
+  .quota.empty{color:var(--danger)}
 
   /* modal — arcane tome */
   .overlay{position:fixed;inset:0;background:rgba(4,7,18,.72);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}
@@ -250,6 +252,7 @@
         <button class="send" id="send" type="submit" title="Envoyer">➤</button>
       </div>
       <div class="composer-note" data-i18n="enterhint">Entrée pour envoyer · Maj+Entrée pour un saut de ligne</div>
+      <div class="quota" id="quota" hidden></div>
     </form>
   </div>
 </main>
@@ -585,6 +588,28 @@ function saveSandbox(list){
 }
 function updateSandboxBadge(){ $("#sbBadge").textContent = loadSandbox().length; }
 
+/* ---------- daily quota indicator (proxy mode) ---------- */
+let quotaState=null; // {remaining, limit} once the Worker reports it
+function updateQuota(remaining, limit){
+  if(remaining==null || isNaN(remaining)) return;
+  quotaState={remaining:remaining, limit:(limit||quotaState&&quotaState.limit||0)};
+  renderQuota();
+}
+function renderQuota(){
+  const el=$("#quota"); if(!el) return;
+  if(!quotaState){ el.hidden=true; return; }
+  const n=quotaState.remaining;
+  el.hidden=false;
+  el.classList.toggle("empty", n<=0);
+  if(LANG==="fr"){
+    el.textContent = n>0 ? `Il te reste ${n} question${n>1?"s":""} aujourd'hui, mortel.`
+                         : "Plus aucune question aujourd'hui, mortel. Reviens demain.";
+  } else {
+    el.textContent = n>0 ? `${n} question${n>1?"s":""} left today, mortal.`
+                         : "No questions left today, mortal. Return tomorrow.";
+  }
+}
+
 /* ---------- credential (BYO API key, or shared access password in proxy mode) ---------- */
 function getKey(){ return localStorage.getItem(LS_KEY) || ""; }
 function setKey(k){ if(k) localStorage.setItem(LS_KEY,k); else localStorage.removeItem(LS_KEY); refreshKeyState(); }
@@ -731,6 +756,11 @@ async function streamOnce(apiMessages, onText, onThinking, isNewTurn){
     : { "content-type":"application/json", "x-api-key": getKey(),
         "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" };
   const resp = await fetch(url, { method:"POST", headers, body: JSON.stringify(body) });
+  // The Worker reports the remaining daily quota on new-turn calls.
+  if(useProxy() && isNewTurn){
+    const rem = resp.headers.get("x-questions-remaining");
+    if(rem!==null) updateQuota(parseInt(rem,10), parseInt(resp.headers.get("x-questions-limit")||"0",10));
+  }
 
   if(!resp.ok || !resp.body){
     let detail="", code=null, limit=null;
@@ -805,7 +835,7 @@ function handleApiError(err, bubble){
   if(s===401) msg = useProxy()
     ? (LANG==="fr"? "Mot de passe d'accès invalide. Vérifie-le dans ⚙️ Réglages." : "Invalid access password. Check it under ⚙️ Settings.")
     : (LANG==="fr"? "Clé API invalide. Vérifiez-la dans ⚙️ Réglages." : "Invalid API key. Check it under ⚙️ Settings.");
-  else if(s===429 && err.code==="rate_limited_daily"){ const n=err.limit||3; msg = LANG==="fr"? `Tu as épuisé tes ${n} questions du jour, mortel. Reviens demain — Tzeentch est patient.` : `You have spent your ${n} questions for today, mortal. Return tomorrow — Tzeentch is patient.`; }
+  else if(s===429 && err.code==="rate_limited_daily"){ const n=err.limit||3; updateQuota(0, n); msg = LANG==="fr"? `Tu as épuisé tes ${n} questions du jour, mortel. Reviens demain — Tzeentch est patient.` : `You have spent your ${n} questions for today, mortal. Return tomorrow — Tzeentch is patient.`; }
   else if(s===429) msg = LANG==="fr"? "Limite de débit atteinte (429). Réessaie dans un instant." : "Rate limited (429). Try again shortly.";
   else if(s===529) msg = LANG==="fr"? "API surchargée (529). Réessayez bientôt." : "API overloaded (529). Try again soon.";
   else if(s===400 && /credit|billing/i.test(err.message||"")) msg = LANG==="fr"? "Problème de crédit/facturation sur votre compte Anthropic." : "Credit/billing issue on your Anthropic account.";
@@ -974,6 +1004,7 @@ function applyLang(){
   document.querySelectorAll("[data-i18n-ph]").forEach(el=> el.placeholder = t(el.getAttribute("data-i18n-ph")));
   updateAuthUI();
   refreshKeyState();
+  renderQuota();
   // refresh welcome if shown
   if(chat.querySelector(".welcome")) showWelcome();
 }
