@@ -4,8 +4,6 @@
 > every request, and **P'tarix**, who writes the answer — forever travelling the world
 > collecting spells and scraps of arcane knowledge.*
 
-<p align="center"><img src="assets/blue-scribes.png" width="220" alt="The Blue Scribes"></p>
-
 A single-file web chatbot that answers **Warhammer: The Old World** rules questions.
 No build, no backend — just a static page you can host on GitHub Pages or open locally.
 

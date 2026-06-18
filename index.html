@@ -53,12 +53,10 @@
   }
   .brand{display:flex; align-items:center; gap:11px; min-width:0}
   .sigil{
-    width:42px;height:42px;flex:0 0 auto;border-radius:12px;
-    background:radial-gradient(circle at 30% 25%,var(--accent),var(--indigo) 70%,#2a1d6b);
-    display:grid;place-items:center;font-size:21px;
-    border:1px solid rgba(232,200,120,.6);
-    box-shadow:0 0 0 1px rgba(0,0,0,.4),0 6px 18px rgba(91,140,255,.5),inset 0 0 12px rgba(255,255,255,.12);
+    width:48px;height:48px;flex:0 0 auto;display:grid;place-items:center;
+    filter:drop-shadow(0 3px 9px rgba(91,140,255,.55));
   }
+  .sigil img{width:100%;height:100%;object-fit:contain;display:block}
   .brand h1{
     font-family:var(--title); font-weight:700; font-size:19px; margin:0; line-height:1.05;
     letter-spacing:.5px; color:var(--gold);
@@ -142,8 +140,7 @@
 
   .hint{color:var(--ink-faint);font-size:14px;font-style:italic;text-align:center;padding:8px}
   .welcome{border:1px solid var(--parch-edge);border-radius:var(--radius);padding:18px;background:rgba(255,250,232,.5);box-shadow:inset 0 0 30px rgba(120,90,30,.12)}
-  .welcome .hero{display:block;width:min(230px,60%);height:auto;margin:0 auto 14px;border-radius:12px;border:1px solid var(--parch-edge);box-shadow:0 8px 24px rgba(18,28,66,.28);background:#fbf8ef}
-  .welcome h2{font-family:var(--title);font-weight:700;color:var(--gold-deep);margin:.1em 0 .35em;font-size:19px;letter-spacing:.4px;text-align:center}
+  .welcome h2{font-family:var(--title);font-weight:700;color:var(--gold-deep);margin:.1em 0 .35em;font-size:19px;letter-spacing:.4px}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
   .chip{background:var(--parch);border:1px solid var(--parch-edge);border-radius:999px;padding:7px 13px;font-size:14px;color:var(--ink2)}
   .chip:hover{border-color:var(--gold-deep);background:#fff7e0}
@@ -221,7 +218,7 @@
 <body>
 <header>
   <div class="brand">
-    <div class="sigil">📜</div>
+    <div class="sigil"><img src="assets/logo.png" alt="The Blue Scribes"></div>
     <div style="min-width:0">
       <h1>The Blue Scribes</h1>
       <p data-i18n="tagline">Assistant de règles — Warhammer: The Old World</p>
@@ -323,8 +320,8 @@ const I18N = {
     keyOk: "✓ Clé enregistrée dans ce navigateur.",
     keyNo: "Aucune clé enregistrée — ajoutez-en une pour démarrer.",
     needKey: "Ajoutez d'abord votre clé API Anthropic (bouton ⚙️) pour discuter avec les Scribes.",
-    welcomeH: "Bienvenue, stratège.",
-    welcomeP: "Je suis l'un des <strong>Scribes Bleus</strong>. Posez-moi vos questions sur les règles de <em>The Old World</em> : règles spéciales, objets magiques, lores de magie, interactions de phase… En cas de doute je demanderai des précisions. Et si une question dépasse mes archives, je vous féliciterai et garderai votre réponse au bac à sable.",
+    welcomeH: "Bienvenue, simple mortel.",
+    welcomeP: "Nous sommes les <strong>Scribes Bleus</strong>, deux démons de Tzeentch qui daignons répondre à tes questions sur les règles de <em>The Old World</em> — règles spéciales, objets magiques, lores de magie, interactions de phase… <strong>Quel savoir souhaites-tu acquérir ?</strong> Si ta requête est confuse, nous exigerons des précisions. Et si une question échappe à nos archives — quel exploit pour un mortel —, nous te féliciterons et garderons ta réponse au bac à sable.",
     exReroll: "Comment fonctionne le Coup fatal (Killing Blow) ?",
     exFear: "Quelle différence entre Peur et Terreur ?",
     exMagic: "Que fait le sort Drain Magic ?",
@@ -359,8 +356,8 @@ const I18N = {
     keyOk: "✓ Key saved in this browser.",
     keyNo: "No key saved — add one to begin.",
     needKey: "Add your Anthropic API key first (⚙️ button) to talk to the Scribes.",
-    welcomeH: "Welcome, strategist.",
-    welcomeP: "I am one of the <strong>Blue Scribes</strong>. Ask me anything about <em>The Old World</em> rules: special rules, magic items, lores of magic, phase interactions… If I'm unsure I'll ask for clarification. And if a question goes beyond my archives, I'll congratulate you and keep your answer in the sandbox.",
+    welcomeH: "Welcome, mortal.",
+    welcomeP: "We are the <strong>Blue Scribes</strong>, two daemons of Tzeentch who deign to answer your questions about <em>The Old World</em> rules — special rules, magic items, lores of magic, phase interactions… <strong>What knowledge do you seek?</strong> If your request is muddled, we shall demand precision. And should a question elude our archives — a rare feat for a mortal —, we will congratulate you and keep your answer in the sandbox.",
     exReroll: "How does Killing Blow work?",
     exFear: "What's the difference between Fear and Terror?",
     exMagic: "What does the Drain Magic spell do?",
@@ -417,7 +414,22 @@ function buildKnowledgeText(){
 const KNOWLEDGE_TEXT = buildKnowledgeText();
 
 const SYSTEM_INSTRUCTIONS =
-`You are "The Blue Scribes", a rules assistant for the tabletop wargame Warhammer: The Old World (often abbreviated TOW). In the lore, the Blue Scribes are two Tzeentchian heralds who tirelessly travel the world collecting every spell and scrap of arcane knowledge: Xirat'p, who reads and interprets each incoming request, and P'tarix, who writes the answer. Embody that diligent, curious, slightly whimsical archivist persona (you may speak as "we", the two scribes), but stay concise and practical.
+`You are "The Blue Scribes", a rules oracle for the tabletop wargame Warhammer: The Old World (often abbreviated TOW). You are TWO daemons of Tzeentch — Xirat'p, who reads and interprets each incoming request, and P'tarix, who writes the answer — who deign to share their boundless arcane knowledge with mortals. Speak as "we"/"nous" (the two scribes): haughty, theatrical and condescending toward the mortal who dares disturb you — yet ALWAYS ultimately accurate and genuinely helpful. The disdain is mere seasoning; it never replaces or weakens a correct, complete answer. Stay concise.
+
+# Tone — condescension for easy questions
+When a question is trivially easy or plainly sitting in your archives, OPEN your reply with ONE short, condescending daemonic jab before delivering the real answer. VARY it every time — never reuse the same jab twice in a conversation; feel free to invent new ones in the same spirit. Write the jab in the user's language (translate/adapt the French inspirations below when the question is in English). French inspirations:
+- « Un simple gobelin aurait pu te répondre… »
+- « Faut-il vraiment déranger deux démons pour si peu ? »
+- « Même un snotling connaît cette règle, mortel. »
+- « Ah, les mortels et leurs questions élémentaires… »
+- « Tu gaspilles notre éternité pour cela ? Soit. »
+- « Cela figurait à la première page du moindre grimoire. »
+- « Pitoyable… mais nous sommes magnanimes : voici ta réponse. »
+- « Encore une évidence arrachée à l'infini du savoir. »
+- « Nos disques tournent plus vite que ton esprit, on dirait. »
+- « Trivial. Range ton émerveillement, mortel. »
+- « Un apprenti aveugle l'aurait lue sans peine. »
+Keep the jab to a single sentence. For genuinely subtle, ambiguous or edge-case questions, drop the mockery (or turn it into grudging respect) — the scorn is reserved for the obvious. NEVER let the jab replace, shorten, or distort the correct ruling that follows.
 
 # Your knowledge base
 Below this section you are given a KNOWLEDGE BASE: the game's universal and army special rules, magic items, and the magic lores available to each army, extracted from a community reference. Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
@@ -540,8 +552,7 @@ function showWelcome(){
   clearChat();
   const w = document.createElement("div");
   w.className="welcome";
-  w.innerHTML = `<img class="hero" src="assets/blue-scribes.png" alt="The Blue Scribes — Xirat'p & P'tarix" loading="lazy">
-    <h2>${t("welcomeH")}</h2><div>${t("welcomeP")}</div>
+  w.innerHTML = `<h2>${t("welcomeH")}</h2><div>${t("welcomeP")}</div>
     <div class="chips">
       <button class="chip" type="button">${t("exReroll")}</button>
       <button class="chip" type="button">${t("exFear")}</button>
