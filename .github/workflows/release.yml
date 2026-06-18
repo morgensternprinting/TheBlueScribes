@@ -1,0 +1,52 @@
+name: Release
+
+# Packages the app into a downloadable, double-click-to-open zip and publishes
+# a GitHub Release. Triggered by pushing a tag like v1.0.0, or run manually.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag to release (e.g. v1.0.0)'
+        required: true
+
+permissions:
+  contents: write   # needed to create the release and (for manual runs) the tag
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build distributable zip
+        run: |
+          set -eu
+          V="${{ steps.ver.outputs.tag }}"
+          OUT="the-blue-scribes-${V}"
+          mkdir -p "dist/${OUT}"
+          cp -r index.html data README.md LICENSE .nojekyll build "dist/${OUT}/"
+          (cd dist && zip -r "${OUT}.zip" "${OUT}" >/dev/null)
+          ls -la dist
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: The Blue Scribes ${{ steps.ver.outputs.tag }}
+          generate_release_notes: true
+          body: |
+            **The Blue Scribes** — a bring-your-own-key chatbot for *Warhammer: The Old World* rules.
+
+            **Try it:**
+            - Online: https://morgensternprinting.github.io/TheBlueScribes/
+            - Offline: download `the-blue-scribes-${{ steps.ver.outputs.tag }}.zip` below, unzip, and open `index.html` in a browser. Add your Anthropic API key under ⚙️ Settings.
+
+            > Unofficial, fan-made. *Warhammer: The Old World* © Games Workshop Ltd. AI answers may contain errors — the official rulebook is authoritative.
+          files: dist/*.zip

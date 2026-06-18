@@ -39,12 +39,35 @@ The full rules knowledge base is sent as cached context on every request. That i
 deliberate: seeing the *entire* ruleset is what lets the bot reliably tell when something
 is genuinely **absent** — the trigger for the sandbox flow.
 
-## Run it
+## Test the app
 
-It's a static page. Either:
+It's a static page — no build step.
 
-- Open `index.html` directly in a modern browser, **or**
-- Host on GitHub Pages: `Settings → Pages → Deploy from a branch → (your branch) / root`.
+**Locally (fastest):**
+- Just open `index.html` in a modern browser, **or**
+- Serve the folder (avoids any `file://` quirks):
+  ```sh
+  python3 -m http.server 8000   # then open http://localhost:8000
+  ```
+Then click **⚙️** and paste an [Anthropic API key](https://console.anthropic.com/settings/keys).
+
+**Online via GitHub Pages (live URL to share/test):**
+- Push to `main` (or run the **Deploy to GitHub Pages** workflow manually on any
+  branch from the **Actions** tab), then enable
+  `Settings → Pages → Source = GitHub Actions`. The app is served at
+  https://morgensternprinting.github.io/TheBlueScribes/.
+- Classic alternative: `Settings → Pages → Deploy from a branch → <branch> / root`.
+
+## Releasing
+
+Releases are produced by `.github/workflows/release.yml`:
+
+- **Tag a version** — `git tag v1.0.0 && git push origin v1.0.0`, **or** run the
+  **Release** workflow from the Actions tab and enter a tag (e.g. `v1.0.0`).
+- The workflow zips the app (`index.html`, `data/`, `build/`, `README.md`,
+  `LICENSE`) into `the-blue-scribes-<tag>.zip` and publishes a **GitHub Release**
+  with that asset plus auto-generated notes.
+- Testers can download the zip, unzip it, and open `index.html` — no install.
 
 ## Regenerating the rules data
 
@@ -66,6 +89,9 @@ objects and writes `window.TOW_RULES = {…}`.
 | `index.html` | The whole app — UI, chat loop, streaming, tool use, sandbox. |
 | `data/rules-data.js` | Generated knowledge base (`window.TOW_RULES`). |
 | `build/extract.js` | Rebuilds the knowledge base from TOWen1. |
+| `.github/workflows/deploy-pages.yml` | Deploys the app to GitHub Pages. |
+| `.github/workflows/release.yml` | Builds the zip and publishes a GitHub Release. |
+| `LICENSE` | MIT (original code/tooling only — not the GW rules content). |
 
 ## ⚠️ Disclaimer
 
