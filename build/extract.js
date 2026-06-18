@@ -79,6 +79,30 @@ const rules = evalLiteral(extractObjectLiteral(html, 'RULES_DB'), 'RULES_DB');
 const magicItems = evalLiteral(extractObjectLiteral(html, 'MAGIC_ITEMS_DB'), 'MAGIC_ITEMS_DB');
 const armyLores = evalLiteral(extractObjectLiteral(html, 'ARMY_LORES'), 'ARMY_LORES');
 
+// Sanitize: drop the source URL field and strip any links from the data, so the
+// chatbot never surfaces or cites external links.
+function stripLinks(s) {
+  if (typeof s !== 'string') return s;
+  return s.replace(/https?:\/\/\S+/gi, '').replace(/\s{2,}/g, ' ').trim();
+}
+for (const k of Object.keys(rules)) {
+  const r = rules[k];
+  delete r.url;
+  if (r.name) r.name = stripLinks(r.name);
+  if (r.desc) r.desc = stripLinks(r.desc);
+}
+for (const cat of Object.keys(magicItems)) {
+  const byArmy = magicItems[cat] || {};
+  for (const army of Object.keys(byArmy)) {
+    for (const it of (byArmy[army] || [])) {
+      if (it && typeof it === 'object') {
+        if (it.n) it.n = stripLinks(it.n);
+        if (it.d) it.d = stripLinks(it.d);
+      }
+    }
+  }
+}
+
 // Count magic items (nested: category -> army -> [items])
 let miCount = 0;
 for (const cat of Object.keys(magicItems)) {

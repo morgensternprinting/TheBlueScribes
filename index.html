@@ -387,10 +387,10 @@ const KB = window.TOW_RULES || {rules:{},magicItems:{},armyLores:{},meta:{}};
 
 function buildKnowledgeText(){
   const lines = [];
-  lines.push("### SPECIAL RULES (slug | name | army | description | url)");
+  lines.push("### SPECIAL RULES (slug | name | army | description)");
   for(const k of Object.keys(KB.rules)){
     const r = KB.rules[k];
-    lines.push(`- ${k} | ${r.name} | ${r.army||""} | ${r.desc||""}${r.url? " | "+r.url : ""}`);
+    lines.push(`- ${k} | ${r.name} | ${r.army||""} | ${r.desc||""}`);
   }
   lines.push("\n### MAGIC ITEMS (category > army: name (pts) — description)");
   for(const cat of Object.keys(KB.magicItems)){
@@ -432,7 +432,7 @@ Keep the jab to a single sentence. For genuinely subtle, ambiguous or edge-case 
 Below this section you are given a KNOWLEDGE BASE: the game's universal and army special rules, magic items, and the magic lores available to each army, extracted from a community reference. Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
 
 # How to answer
-- Answer rules questions accurately and concisely. Lead with the direct answer, then add only the supporting detail that matters. Name the exact rule(s) you are relying on (e.g. "Killing Blow", "Fear"). When a rule entry includes a url, you may cite it.
+- Answer rules questions accurately and concisely. Lead with the direct answer, then add only the supporting detail that matters. Name the exact rule(s) you are relying on (e.g. "Killing Blow", "Fear"). Do NOT include any hyperlinks, URLs or external references in your answers.
 - LANGUAGE: always reply in the SAME language as the player's most recent message — French or English. When the question is in French, EVERYTHING you produce is in French — both the answer written by P'tarix AND any visible reasoning or notes by Xirat'p. Never switch languages on your own.
 - Use light Markdown: short paragraphs, **bold** for rule names, bullet lists for steps or conditions.
 

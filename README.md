@@ -27,9 +27,9 @@ No build, no backend — just a static page you can host on GitHub Pages or open
 
 ## How it works
 
-The page calls the **Anthropic API directly from your browser** using **your own API key**
-(model: `claude-opus-4-8`). The key is stored only in your browser's `localStorage` and is
-sent only to `api.anthropic.com` — there is no server in between.
+The page calls the **Anthropic API directly from your browser** using **your own API key**.
+The key is stored only in your browser's `localStorage` and is sent only to
+`api.anthropic.com` — there is no server in between.
 
 - Get an API key at [console.anthropic.com](https://console.anthropic.com/settings/keys),
   then paste it under **⚙️ Settings**.
