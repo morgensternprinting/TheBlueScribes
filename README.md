@@ -35,6 +35,14 @@ The key is stored only in your browser's `localStorage` and is sent only to
   then paste it under **⚙️ Settings**.
 - Each conversation uses your own Anthropic credit.
 
+### Use one hidden key for everyone (optional)
+
+If you'd rather visitors **not** need their own key, deploy the small
+[Cloudflare Worker proxy](./worker/README.md): it holds **your** Anthropic key as
+a server-side secret (never in the browser or this repo) behind a **shared
+password**. Set `PROXY_URL` in `index.html` to your Worker URL and the app asks
+for that password instead of an API key.
+
 The full rules knowledge base is sent as cached context on every request. That is
 deliberate: seeing the *entire* ruleset is what lets the bot reliably tell when something
 is genuinely **absent** — the trigger for the sandbox flow.

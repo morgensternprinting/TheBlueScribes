@@ -1,0 +1,13 @@
+name = "blue-scribes-proxy"
+main = "blue-scribes-proxy.js"
+compatibility_date = "2024-11-01"
+
+# Secrets are NOT stored here. Set them once after first deploy:
+#   wrangler secret put ANTHROPIC_API_KEY
+#   wrangler secret put APP_PASSWORD
+
+[vars]
+# Lock this down to your site's origin (scheme + host only, no path/trailing slash).
+ALLOWED_ORIGIN = "https://morgensternprinting.github.io"
+MODEL = "claude-opus-4-8"
+MAX_TOKENS = "8192"

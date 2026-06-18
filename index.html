@@ -290,13 +290,26 @@
 <script>
 "use strict";
 /* ─────────────────────────────────────────────────────────────────────────
-   The Blue Scribes — a bring-your-own-key TOW rules chatbot.
-   The Anthropic API key lives only in this browser (localStorage) and is sent
-   only to api.anthropic.com. No backend.
+   The Blue Scribes — a TOW rules chatbot.
+
+   Two ways to talk to the model:
+   1) PROXY MODE (hide your own key): set PROXY_URL to your Cloudflare Worker
+      (see worker/). The Worker holds YOUR Anthropic key + a shared password as
+      server-side secrets — the key never reaches the browser or this repo. The
+      app then asks visitors for the shared ACCESS PASSWORD.
+   2) BYO-KEY MODE (PROXY_URL empty): each visitor pastes their own Anthropic key
+      (kept only in their browser's localStorage, sent only to api.anthropic.com).
    ───────────────────────────────────────────────────────────────────────── */
 
 const MODEL = "claude-opus-4-8";
+
+// ↓↓↓ Set this to your deployed Worker URL to use YOUR hidden key (proxy mode).
+//     Leave "" for bring-your-own-key mode. The URL itself is not a secret.
+const PROXY_URL = ""; // e.g. "https://blue-scribes-proxy.<your-subdomain>.workers.dev"
+const USE_PROXY = !!PROXY_URL;
+
 const LS_KEY = "tow_blue_scribes_key";
+const LS_PW  = "tow_blue_scribes_pw";
 const LS_SANDBOX = "tow_blue_scribes_sandbox";
 const LS_LANG = "tow_blue_scribes_lang";
 
@@ -330,6 +343,14 @@ const I18N = {
     exCharge: "Comment résoudre une charge et ses réactions ?",
     exArmor: "Comment se calcule la sauvegarde d'armure ?",
     confirmClearKey: "Effacer la clé API enregistrée ?",
+    pwLabel: "Mot de passe d'accès",
+    pwPh: "Mot de passe…",
+    clearPw: "Effacer le mot de passe",
+    pwNote: "La clé Anthropic est gardée <strong>côté serveur</strong> (proxy) — elle n'est jamais visible ni stockée dans ton navigateur. Saisis le <strong>mot de passe d'accès</strong> partagé pour utiliser les Scribes. Sans mot de passe valide, le bot ne répondra pas.",
+    pwOk: "✓ Mot de passe enregistré dans ce navigateur.",
+    pwNo: "Aucun mot de passe — saisis-le pour démarrer.",
+    needPw: "Saisis d'abord le mot de passe d'accès (bouton ⚙️) pour discuter avec les Scribes.",
+    confirmClearPw: "Effacer le mot de passe enregistré ?",
     confirmClearSb: "Effacer toutes les entrées du bac à sable ?",
     confirmDel: "Supprimer cette entrée ?",
     savedToast: "Conservé au bac à sable.",
@@ -366,6 +387,14 @@ const I18N = {
     exCharge: "How do I resolve a charge and its reactions?",
     exArmor: "How is the armour save calculated?",
     confirmClearKey: "Clear the saved API key?",
+    pwLabel: "Access password",
+    pwPh: "Password…",
+    clearPw: "Clear password",
+    pwNote: "The Anthropic key is kept <strong>server-side</strong> (proxy) — it is never visible or stored in your browser. Enter the shared <strong>access password</strong> to use the Scribes. Without a valid password, the bot won't answer.",
+    pwOk: "✓ Password saved in this browser.",
+    pwNo: "No password — enter it to begin.",
+    needPw: "Enter the access password first (⚙️ button) to talk to the Scribes.",
+    confirmClearPw: "Clear the saved password?",
     confirmClearSb: "Clear all sandbox entries?",
     confirmDel: "Delete this entry?",
     savedToast: "Kept in the sandbox.",
@@ -507,13 +536,34 @@ function saveSandbox(list){
 }
 function updateSandboxBadge(){ $("#sbBadge").textContent = loadSandbox().length; }
 
-/* ---------- API key ---------- */
+/* ---------- credential (BYO API key, or shared access password in proxy mode) ---------- */
 function getKey(){ return localStorage.getItem(LS_KEY) || ""; }
 function setKey(k){ if(k) localStorage.setItem(LS_KEY,k); else localStorage.removeItem(LS_KEY); refreshKeyState(); }
+function getPassword(){ return localStorage.getItem(LS_PW) || ""; }
+function setPassword(p){ if(p) localStorage.setItem(LS_PW,p); else localStorage.removeItem(LS_PW); refreshKeyState(); }
+function getCred(){ return USE_PROXY ? getPassword() : getKey(); }
+function setCred(v){ return USE_PROXY ? setPassword(v) : setKey(v); }
 function refreshKeyState(){
   const ks = $("#keyState");
-  if(getKey()){ ks.textContent = t("keyOk"); ks.className="keystate ok"; }
-  else { ks.textContent = t("keyNo"); ks.className="keystate no"; }
+  if(getCred()){ ks.textContent = t(USE_PROXY?"pwOk":"keyOk"); ks.className="keystate ok"; }
+  else { ks.textContent = t(USE_PROXY?"pwNo":"keyNo"); ks.className="keystate no"; }
+}
+/* Swap the Settings labels/notes between API-key mode and password mode. */
+function updateAuthUI(){
+  const lab=document.querySelector("label[for=apiKey]");
+  const note=document.querySelector("#settingsOverlay .note");
+  const inp=$("#apiKey"); const clr=$("#clearKey");
+  if(USE_PROXY){
+    if(lab) lab.textContent=t("pwLabel");
+    if(note) note.innerHTML=t("pwNote");
+    if(inp) inp.placeholder=t("pwPh");
+    if(clr) clr.textContent=t("clearPw");
+  } else {
+    if(lab) lab.textContent=t("apiKeyLabel");
+    if(note) note.innerHTML=t("keyNote");
+    if(inp) inp.placeholder="sk-ant-...";
+    if(clr) clr.textContent=t("clearKey");
+  }
 }
 
 /* ---------- conversation state ---------- */
@@ -566,9 +616,9 @@ function showWelcome(){
   w.querySelectorAll(".chip").forEach(c=> c.addEventListener("click",()=>{
     input.value = c.textContent; autoGrow(); input.focus();
   }));
-  if(!getKey()){
+  if(!getCred()){
     const h = document.createElement("div");
-    h.className="hint"; h.textContent = t("needKey");
+    h.className="hint"; h.textContent = t(USE_PROXY?"needPw":"needKey");
     chat.appendChild(h);
   }
 }
@@ -620,16 +670,14 @@ async function streamOnce(apiMessages, onText, onThinking){
     tools: TOOLS,
     messages: apiMessages
   };
-  const resp = await fetch("https://api.anthropic.com/v1/messages", {
-    method:"POST",
-    headers:{
-      "content-type":"application/json",
-      "x-api-key": getKey(),
-      "anthropic-version":"2023-06-01",
-      "anthropic-dangerous-direct-browser-access":"true"
-    },
-    body: JSON.stringify(body)
-  });
+  // Proxy mode → call your Worker (which adds the hidden key server-side).
+  // BYO mode  → call the Anthropic API directly with the user's own key.
+  const url = USE_PROXY ? PROXY_URL : "https://api.anthropic.com/v1/messages";
+  const headers = USE_PROXY
+    ? { "content-type":"application/json", "x-app-password": getPassword() }
+    : { "content-type":"application/json", "x-api-key": getKey(),
+        "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" };
+  const resp = await fetch(url, { method:"POST", headers, body: JSON.stringify(body) });
 
   if(!resp.ok || !resp.body){
     let detail="";
@@ -701,7 +749,9 @@ async function streamOnce(apiMessages, onText, onThinking){
 function handleApiError(err, bubble){
   let msg;
   const s = err.status;
-  if(s===401) msg = LANG==="fr"? "Clé API invalide. Vérifiez-la dans ⚙️ Réglages." : "Invalid API key. Check it under ⚙️ Settings.";
+  if(s===401) msg = USE_PROXY
+    ? (LANG==="fr"? "Mot de passe d'accès invalide. Vérifie-le dans ⚙️ Réglages." : "Invalid access password. Check it under ⚙️ Settings.")
+    : (LANG==="fr"? "Clé API invalide. Vérifiez-la dans ⚙️ Réglages." : "Invalid API key. Check it under ⚙️ Settings.");
   else if(s===429) msg = LANG==="fr"? "Limite de débit atteinte (429). Réessayez dans un instant." : "Rate limited (429). Try again shortly.";
   else if(s===529) msg = LANG==="fr"? "API surchargée (529). Réessayez bientôt." : "API overloaded (529). Try again soon.";
   else if(s===400 && /credit|billing/i.test(err.message||"")) msg = LANG==="fr"? "Problème de crédit/facturation sur votre compte Anthropic." : "Credit/billing issue on your Anthropic account.";
@@ -714,7 +764,7 @@ async function send(text){
   if(busy) return;
   text = text.trim();
   if(!text) return;
-  if(!getKey()){ openSettings(); return; }
+  if(!getCred()){ openSettings(); return; }
   // remove welcome if present
   const w = chat.querySelector(".welcome"); if(w){ clearChat(); }
   const hint = chat.querySelector(".hint"); if(hint) hint.remove();
@@ -826,15 +876,15 @@ function renderSandbox(){
 }
 
 /* ---------- modals ---------- */
-function openSettings(){ $("#apiKey").value=getKey(); refreshKeyState(); $("#settingsOverlay").classList.add("show"); }
+function openSettings(){ updateAuthUI(); $("#apiKey").value=getCred(); refreshKeyState(); $("#settingsOverlay").classList.add("show"); }
 function openSandbox(){ renderSandbox(); $("#sandboxOverlay").classList.add("show"); }
 document.querySelectorAll("[data-close]").forEach(b=> b.addEventListener("click", e=> e.target.closest(".overlay").classList.remove("show")));
 document.querySelectorAll(".overlay").forEach(o=> o.addEventListener("click", e=>{ if(e.target===o) o.classList.remove("show"); }));
 
 $("#openSettings").addEventListener("click", openSettings);
 $("#openSandbox").addEventListener("click", openSandbox);
-$("#saveKey").addEventListener("click", ()=>{ setKey($("#apiKey").value.trim()); const w=chat.querySelector(".hint"); if(w) w.remove(); });
-$("#clearKey").addEventListener("click", ()=>{ if(confirm(t("confirmClearKey"))){ $("#apiKey").value=""; setKey(""); } });
+$("#saveKey").addEventListener("click", ()=>{ setCred($("#apiKey").value.trim()); const w=chat.querySelector(".hint"); if(w) w.remove(); });
+$("#clearKey").addEventListener("click", ()=>{ if(confirm(t(USE_PROXY?"confirmClearPw":"confirmClearKey"))){ $("#apiKey").value=""; setCred(""); } });
 $("#sbClear").addEventListener("click", ()=>{ if(confirm(t("confirmClearSb"))){ saveSandbox([]); renderSandbox(); } });
 $("#sbExport").addEventListener("click", ()=>{
   const blob = new Blob([JSON.stringify(loadSandbox(),null,2)], {type:"application/json"});
@@ -851,6 +901,7 @@ function applyLang(){
   $("#lang").querySelectorAll("button").forEach(b=> b.classList.toggle("on", b.dataset.lang===LANG));
   document.querySelectorAll("[data-i18n]").forEach(el=> el.innerHTML = t(el.getAttribute("data-i18n")));
   document.querySelectorAll("[data-i18n-ph]").forEach(el=> el.placeholder = t(el.getAttribute("data-i18n-ph")));
+  updateAuthUI();
   refreshKeyState();
   // refresh welcome if shown
   if(chat.querySelector(".welcome")) showWelcome();
