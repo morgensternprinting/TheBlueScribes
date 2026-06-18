@@ -11,3 +11,13 @@ compatibility_date = "2024-11-01"
 ALLOWED_ORIGIN = "https://morgensternprinting.github.io"
 MODEL = "claude-opus-4-8"
 MAX_TOKENS = "8192"
+DAILY_LIMIT = "3"   # questions per IP per UTC day (needs the RATE_LIMIT KV binding)
+
+# Per-IP daily limit storage. Create the namespace once:
+#   wrangler kv namespace create RATE_LIMIT
+# then paste the printed id below and redeploy. (Dashboard equivalent: KV →
+# Create namespace, then Worker → Settings → Variables → KV Namespace Bindings →
+# bind variable name RATE_LIMIT to it.) Without this binding, no limiting happens.
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT"
+# id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"

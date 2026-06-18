@@ -15,6 +15,11 @@
  *                       "https://morgensternprinting.github.io"  (default "*")
  *   MODEL               model id (default "claude-opus-4-8")
  *   MAX_TOKENS          per-response cap (default 8192, hard max 16000)
+ *   DAILY_LIMIT         questions per IP per UTC day (default 3)
+ *
+ * Optional binding (dashboard → Settings → Variables → KV Namespace Bindings):
+ *   RATE_LIMIT  (KV)    bind a KV namespace here to enable the per-IP daily cap.
+ *                       Without it, no limiting is applied.
  */
 
 export default {
@@ -35,6 +40,23 @@ export default {
     }
     if (!env.ANTHROPIC_API_KEY) {
       return json({ error: { message: "Server is missing ANTHROPIC_API_KEY" } }, 500, cors);
+    }
+
+    // 1b) Per-IP daily limit. Only NEW user questions are counted (the front-end
+    //     sends x-new-turn:"1" on the first call of a turn, not on tool-loop
+    //     continuations). Requires a KV namespace bound as RATE_LIMIT; if it is
+    //     not configured, limiting is silently skipped.
+    if (env.RATE_LIMIT && request.headers.get("x-new-turn") === "1") {
+      const limit = Number(env.DAILY_LIMIT) || 3;
+      const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+      const day = new Date().toISOString().slice(0, 10); // UTC yyyy-mm-dd → resets daily
+      const key = `rl:${day}:${ip}`;
+      const used = Number(await env.RATE_LIMIT.get(key)) || 0;
+      if (used >= limit) {
+        return json({ error: { message: `Daily question limit reached (${limit}/day).`, code: "rate_limited_daily", limit } }, 429, cors);
+      }
+      // Best-effort increment (KV is eventually consistent — fine for a soft cap).
+      await env.RATE_LIMIT.put(key, String(used + 1), { expirationTtl: 172800 });
     }
 
     // 2) Parse the client body and rebuild the upstream request. Only the
@@ -76,7 +98,7 @@ function corsHeaders(env) {
   return {
     "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN || "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "content-type, x-app-password",
+    "Access-Control-Allow-Headers": "content-type, x-app-password, x-new-turn",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin",
   };

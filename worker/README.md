@@ -41,6 +41,32 @@ wrangler secret put APP_PASSWORD        # choose a password
 Edit `wrangler.toml` `[vars]` to set `ALLOWED_ORIGIN` to your site origin. Then
 put the deployed URL into `PROXY_URL` in `index.html`.
 
+## Per-IP daily limit (e.g. 3 questions/day)
+
+The Worker can cap each visitor IP to a few questions per day. It counts only
+**new questions** (the site marks them with an `x-new-turn` header), not the
+extra calls a single question makes during the sandbox tool loop. It needs a
+free **KV** namespace; without it, no limit is applied.
+
+**Dashboard:**
+1. Cloudflare → **Workers & Pages → KV** → **Create a namespace** (e.g. `blue-scribes-rl`).
+2. Your Worker → **Settings → Variables and Secrets → KV Namespace Bindings** →
+   **Add binding**: variable name **`RATE_LIMIT`** → select that namespace → **Deploy**.
+3. (Optional) Add a **variable** `DAILY_LIMIT` = `3` (default is already 3).
+
+**CLI:**
+```sh
+cd worker
+wrangler kv namespace create RATE_LIMIT      # prints an id
+# uncomment the [[kv_namespaces]] block in wrangler.toml and paste the id
+wrangler deploy
+```
+
+Notes: the counter resets at **UTC midnight**; KV is eventually consistent, so a
+fast burst across edge locations might allow one or two extra — fine for a soft
+cap. When a visitor is over the limit, the site shows an in-character "come back
+tomorrow" message.
+
 ## Notes
 
 - The key is **never** committed and **never** sent to the browser — only the

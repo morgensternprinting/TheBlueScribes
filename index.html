@@ -711,7 +711,7 @@ function addUserMessage(text){
 }
 
 /* ---------- the API turn (streaming + tool loop) ---------- */
-async function streamOnce(apiMessages, onText, onThinking){
+async function streamOnce(apiMessages, onText, onThinking, isNewTurn){
   const body = {
     model: MODEL,
     max_tokens: 8192,
@@ -727,15 +727,15 @@ async function streamOnce(apiMessages, onText, onThinking){
   // BYO mode  → call the Anthropic API directly with the user's own key.
   const url = useProxy() ? proxyUrl() : "https://api.anthropic.com/v1/messages";
   const headers = useProxy()
-    ? { "content-type":"application/json", "x-app-password": getPassword() }
+    ? { "content-type":"application/json", "x-app-password": getPassword(), "x-new-turn": isNewTurn ? "1" : "0" }
     : { "content-type":"application/json", "x-api-key": getKey(),
         "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" };
   const resp = await fetch(url, { method:"POST", headers, body: JSON.stringify(body) });
 
   if(!resp.ok || !resp.body){
-    let detail="";
-    try{ const j = await resp.json(); detail = j.error?.message || JSON.stringify(j); }catch(e){ detail = resp.statusText; }
-    const err = new Error(detail); err.status = resp.status; throw err;
+    let detail="", code=null, limit=null;
+    try{ const j = await resp.json(); detail = j.error?.message || JSON.stringify(j); code = j.error?.code||null; limit = j.error?.limit||null; }catch(e){ detail = resp.statusText; }
+    const err = new Error(detail); err.status = resp.status; err.code = code; err.limit = limit; throw err;
   }
 
   // SSE parse → accumulate content blocks (text / thinking / tool_use), preserving signatures.
@@ -805,7 +805,8 @@ function handleApiError(err, bubble){
   if(s===401) msg = useProxy()
     ? (LANG==="fr"? "Mot de passe d'accès invalide. Vérifie-le dans ⚙️ Réglages." : "Invalid access password. Check it under ⚙️ Settings.")
     : (LANG==="fr"? "Clé API invalide. Vérifiez-la dans ⚙️ Réglages." : "Invalid API key. Check it under ⚙️ Settings.");
-  else if(s===429) msg = LANG==="fr"? "Limite de débit atteinte (429). Réessayez dans un instant." : "Rate limited (429). Try again shortly.";
+  else if(s===429 && err.code==="rate_limited_daily"){ const n=err.limit||3; msg = LANG==="fr"? `Tu as épuisé tes ${n} questions du jour, mortel. Reviens demain — Tzeentch est patient.` : `You have spent your ${n} questions for today, mortal. Return tomorrow — Tzeentch is patient.`; }
+  else if(s===429) msg = LANG==="fr"? "Limite de débit atteinte (429). Réessaie dans un instant." : "Rate limited (429). Try again shortly.";
   else if(s===529) msg = LANG==="fr"? "API surchargée (529). Réessayez bientôt." : "API overloaded (529). Try again soon.";
   else if(s===400 && /credit|billing/i.test(err.message||"")) msg = LANG==="fr"? "Problème de crédit/facturation sur votre compte Anthropic." : "Credit/billing issue on your Anthropic account.";
   else msg = (LANG==="fr"? "Erreur : " : "Error: ") + (err.message||"unknown");
@@ -875,7 +876,9 @@ async function runTurnClean(){
   try{
     let guard=0;
     while(guard++<6){
-      const {content, stopReason} = await streamOnce(messages, onText, onThinking);
+      // Only the FIRST call of a turn counts as a "question" for the daily limit;
+      // tool-loop continuations (guard>1) do not.
+      const {content, stopReason} = await streamOnce(messages, onText, onThinking, guard===1);
       messages.push({role:"assistant", content});
 
       if(stopReason==="tool_use"){
