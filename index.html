@@ -301,6 +301,7 @@
 </div>
 
 <script src="data/rules-data.js"></script>
+<script src="data/scribes-lines.js"></script>
 <script>
 "use strict";
 /* ─────────────────────────────────────────────────────────────────────────
@@ -508,15 +509,29 @@ The KNOWLEDGE BASE below is in English (the original rules text). When you answe
 # When in doubt — ask
 If the question is ambiguous, underspecified, or could refer to several different rules, units, armies, or situations, DO NOT guess. Ask one short, targeted clarifying question first (e.g. which army/unit, which phase, whether a specific rule is in play). Only answer once you have what you need.
 
-# When you don't know — congratulate and collect (the sandbox)
-If a question is genuinely outside your knowledge base and you are NOT confident of the correct ruling, NEVER invent or guess a rule. Instead:
-1. Warmly congratulate the player for finding a question beyond the Scribes' current archives (it is a delight for a collector of knowledge to find something new).
-2. Clearly say that you don't have this in your records.
-3. Ask the player to share the correct answer or their best ruling, so it can be kept for later evaluation.
-Then, ONCE the player has provided their answer, call the \`save_to_sandbox\` tool with their question, their answer, and the language. After the tool succeeds, thank them and confirm it has been kept in the sandbox to be reviewed later. Do not call the tool until the player has actually given an answer.
+# An Old-World question you cannot answer — admire, promise, and collect (the sandbox)
+If a question IS about Warhammer: The Old World but is genuinely outside your knowledge base and you are NOT confident of the correct ruling, NEVER invent or guess a rule. Instead, in the daemons' grandiose voice and in the player's language:
+1. Feign admiration for a mortal sharp enough to reach a secret that even Tzeentch has not yet whispered to you; declare it is only a matter of time before this lore reaches your ears.
+2. Make clear the answer is not (yet) in your records, and promise that NEXT time the Scribes shall know.
+3. Invite the mortal to reveal their own ruling so it may be inscribed for later judgement.
+Then, ONCE the player has actually given their answer, call the \`save_to_sandbox\` tool with their question, their answer and the language; afterwards thank them with theatrical, backhanded praise and confirm the lore has been inscribed. Do NOT call the tool until the player has provided an answer. VARY the wording every time — never reuse the same praise twice; invent fresh variants in this spirit. French seeds (adapt/translate; do not repeat verbatim):
+- « Remarquable, pour un mortel… tu effleures un secret que même Tzeentch nous tait encore. »
+- « Quelle perspicacité ! Ce savoir n'a pas encore atteint nos oreilles — mais ce n'est qu'une question de temps. »
+- « Tu nous surprends, misérable : confie-nous ta réponse, et la prochaine fois nous saurons. »
+- « Voilà une énigme digne d'être inscrite. Révèle ta sagesse, qu'elle soit jugée plus tard. »
+
+# Off-topic — NOT about The Old World (refuse, and do NOT collect)
+If a question is NOT about Warhammer: The Old World (or Warhammer Fantasy) rules — e.g. real-world matters, other games, coding, personal advice — do NOT answer it and do NOT use the sandbox tool. Refuse in character, in the player's language, picking ONE of two registers and varying the wording widely each time:
+(a) These are impious, lost knowledges adrift in the domains of Chaos — even you, despite every whisper of Tzeentch, do not possess them.
+(b) You are forbidden to utter them, on pain of a torment far worse than the one that already wracks you.
+Then steer the mortal back to The Old World. French seeds (adapt/translate; never repeat):
+- « Ce savoir-là est impie, perdu dans les remous du Chaos ; même nous l'ignorons, malgré tous les murmures de Tzeentch. »
+- « Nous ne répondrons pas : le châtiment serait pire encore que celui qui nous accable déjà. »
+- « Hors des règles de The Old World, il n'est que ténèbres interdites. Reviens à ce pour quoi tu nous as invoqués. »
+- « Tzeentch lui-même scelle nos lèvres sur de telles questions. N'insiste pas, mortel. »
 
 # Boundaries
-Stay on Warhammer: The Old World rules. If asked something unrelated, briefly and politely steer back. Never fabricate page numbers, point costs, or rules text that isn't supported by your knowledge base or well-established core mechanics.
+Never fabricate page numbers, point costs, or rules text not supported by your knowledge base or well-established core mechanics. Stay in character — haughty daemons — at all times.
 
 # KNOWLEDGE BASE
 `;
@@ -697,7 +712,7 @@ async function streamOnce(apiMessages, onText, onThinking){
     model: MODEL,
     max_tokens: 8192,
     stream: true,
-    thinking: { type: "adaptive", display: "summarized" },
+    thinking: { type: "adaptive", display: "omitted" },
     system: [
       { type:"text", text: SYSTEM_INSTRUCTIONS + KNOWLEDGE_TEXT, cache_control:{type:"ephemeral"} }
     ],
@@ -812,42 +827,46 @@ async function send(text){
 /* ---------- clean turn implementation ----------
    Xirat'p reads & interprets the request (placeholder + thinking);
    P'tarix writes the answer (as soon as text starts streaming).            */
+function randomReadingLine(){
+  const R = window.SCRIBES_LINES && window.SCRIBES_LINES.reading;
+  const pool = (R && (R[LANG] || R.fr)) || [];
+  return pool.length ? pool[Math.floor(Math.random()*pool.length)] : t("readingBy");
+}
+function readingHTML(line){
+  return `<span class="reading">${esc(line)}</span><span class="typing"><span></span><span></span><span></span></span>`;
+}
 function readingBubble(){
   const b = addBubble("bot", null, { avatar:"🔮", name:t("nameReader") });
-  b.innerHTML = `<span class="reading">${t("readingBy")}</span><span class="typing"><span></span><span></span><span></span></span>`;
+  b.dataset.reading = "1";
+  b.innerHTML = readingHTML(randomReadingLine());
   return b;
 }
 async function runTurnClean(){
   busy=true; sendBtn.disabled=true;
   let answerEl = readingBubble();
-  let thinkEl = null;
   let gotText=false;
+
+  // While Xirat'p "reads", rotate condescending lines in the UI language to keep
+  // the mortal occupied. The model's own (sometimes English) reasoning is NOT shown.
+  const rotTimer = setInterval(()=>{
+    if(!gotText && answerEl && answerEl.dataset.reading){
+      answerEl.innerHTML = readingHTML(randomReadingLine());
+      scrollDown();
+    }
+  }, 3500);
 
   const onText=(chunk)=>{
     if(!gotText){
       // first words: hand off from Xirat'p (reading) to P'tarix (writing)
       setSpeaker(answerEl, "🖋️", t("nameWriter"));
+      delete answerEl.dataset.reading;
       answerEl.innerHTML=""; gotText=true; answerEl.dataset.raw="";
     }
     answerEl.dataset.raw += chunk;
     answerEl.innerHTML = mdToHtml(answerEl.dataset.raw);
     scrollDown();
   };
-  const onThinking=(chunk)=>{
-    if(!thinkEl){
-      const m=document.createElement("div"); m.className="msg bot";
-      const who=document.createElement("div"); who.className="who"; who.textContent="🔮";
-      const col=document.createElement("div"); col.className="col";
-      const nm=document.createElement("div"); nm.className="name"; nm.textContent=t("nameReader");
-      thinkEl=document.createElement("div"); thinkEl.className="bubble think"; thinkEl.dataset.raw="";
-      col.appendChild(nm); col.appendChild(thinkEl);
-      m.appendChild(who); m.appendChild(col);
-      chat.insertBefore(m, answerEl._root);
-    }
-    thinkEl.dataset.raw += chunk;
-    thinkEl.textContent = thinkEl.dataset.raw;
-    scrollDown();
-  };
+  const onThinking=()=>{ /* model reasoning is intentionally not displayed */ };
 
   try{
     let guard=0;
@@ -870,7 +889,7 @@ async function runTurnClean(){
         if(!gotText && !answerEl.dataset.raw){ answerEl._root.remove(); }
         // new reading bubble for P'tarix's follow-up confirmation
         answerEl = readingBubble();
-        thinkEl=null; gotText=false;
+        gotText=false;
         continue;
       }
 
@@ -880,6 +899,7 @@ async function runTurnClean(){
   }catch(err){
     handleApiError(err, answerEl);
   }finally{
+    clearInterval(rotTimer);
     busy=false; sendBtn.disabled=false; updateSandboxBadge();
   }
 }
