@@ -6,7 +6,7 @@
 <title>The Blue Scribes — TOW Rules Chatbot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@700;900&family=Pirata+One&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
 <style>
   :root{
     /* arcane blue (Tzeentch) */
@@ -22,7 +22,7 @@
     --radius:14px; --shadow:0 20px 55px rgba(0,0,0,.55);
     --serif:'EB Garamond', Georgia, 'Times New Roman', serif;
     --rune:'Cinzel', Georgia, serif;
-    --title:'Pirata One','Cinzel Decorative', Georgia, serif;
+    --title:'Cinzel Decorative','Cinzel', Georgia, serif;
   }
   *{box-sizing:border-box}
   html{height:100%}
@@ -57,11 +57,8 @@
     filter:drop-shadow(0 4px 12px rgba(91,140,255,.6));
   }
   .sigil img{width:100%;height:100%;object-fit:contain;display:block}
-  .brand h1{
-    font-family:var(--title); font-weight:400; font-size:32px; margin:0; line-height:1;
-    letter-spacing:1px; color:var(--gold);
-    text-shadow:0 1px 0 #000, 0 0 20px rgba(232,200,120,.45), 0 0 32px rgba(123,107,255,.35);
-  }
+  .brand h1{margin:0;line-height:0;display:flex}
+  .brand h1 img{height:46px;width:auto;display:block;filter:drop-shadow(0 1px 0 #000) drop-shadow(0 0 18px rgba(232,200,120,.45)) drop-shadow(0 0 28px rgba(123,107,255,.35))}
   .brand p{margin:3px 0 0;font-family:var(--rune);font-size:11.5px;letter-spacing:.8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
   .spacer{flex:1}
   .hbtns{display:flex;gap:8px;align-items:center}
@@ -196,7 +193,7 @@
   /* responsive */
   @media (max-width:620px){
     header{gap:11px;padding:10px 12px}
-    .brand h1{font-size:24px}
+    .brand h1 img{height:36px}
     .brand p{display:none}
     .sigil{width:52px;height:52px}
     #openSandbox .lbl{display:none}
@@ -220,7 +217,7 @@
   <div class="brand">
     <div class="sigil"><img src="assets/logo.png" alt="The Blue Scribes"></div>
     <div style="min-width:0">
-      <h1>The Blue Scribes</h1>
+      <h1 class="brandtitle"><img src="assets/title.png" alt="The Blue Scribes"></h1>
       <p data-i18n="tagline">Oracle démoniaque des règles · The Old World</p>
     </div>
   </div>
