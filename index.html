@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Blue Scribes — TOW Rules Chatbot</title>
+<style>
+  :root{
+    --bg:#0b1020; --bg2:#111a33; --panel:#16213f; --panel2:#1d2b50;
+    --ink:#e8edf7; --muted:#9fb0d0; --line:#2b3b66;
+    --accent:#5b8cff; --accent2:#8b6bff; --gold:#e8c878; --gold2:#caa64a;
+    --user:#23427a; --bot:#15203c;
+    --danger:#ff6b6b; --ok:#5fd29a;
+    --radius:14px; --shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(139,107,255,.18), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(91,140,255,.16), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column; min-height:100dvh;
+  }
+  a{color:var(--accent)}
+  header{
+    position:sticky; top:0; z-index:5;
+    display:flex; align-items:center; gap:12px;
+    padding:12px 16px; background:rgba(11,16,32,.82);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:center; gap:11px; min-width:0}
+  .sigil{
+    width:38px;height:38px;flex:0 0 auto;border-radius:11px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:grid;place-items:center;font-size:20px;
+    box-shadow:0 4px 14px rgba(91,140,255,.45);
+  }
+  .brand h1{font-size:16px;margin:0;line-height:1.15;letter-spacing:.2px}
+  .brand p{margin:0;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .spacer{flex:1}
+  .hbtns{display:flex;gap:8px;align-items:center}
+  button{font-family:inherit;cursor:pointer}
+  .btn{
+    background:var(--panel); color:var(--ink); border:1px solid var(--line);
+    padding:8px 12px;border-radius:10px;font-size:13px;display:inline-flex;gap:7px;align-items:center;
+    transition:.15s;
+  }
+  .btn:hover{border-color:var(--accent);background:var(--panel2)}
+  .btn .badge{
+    background:var(--gold);color:#1a1300;border-radius:999px;font-size:11px;font-weight:700;
+    padding:1px 7px;min-width:18px;text-align:center;
+  }
+  .lang{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .lang button{background:transparent;color:var(--muted);border:0;padding:7px 10px;font-size:12.5px;font-weight:600}
+  .lang button.on{background:var(--accent);color:#fff}
+
+  main{flex:1;display:flex;flex-direction:column;max-width:880px;width:100%;margin:0 auto;padding:0 14px}
+  #chat{flex:1;padding:18px 2px 8px;display:flex;flex-direction:column;gap:14px}
+  .msg{display:flex;gap:10px;max-width:100%}
+  .msg .who{
+    width:30px;height:30px;flex:0 0 auto;border-radius:9px;display:grid;place-items:center;font-size:15px;margin-top:2px;
+  }
+  .msg.bot .who{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  .msg.user .who{background:var(--user);border:1px solid var(--line)}
+  .bubble{
+    padding:11px 14px;border-radius:var(--radius);border:1px solid var(--line);
+    background:var(--panel);max-width:100%;overflow-wrap:anywhere;
+  }
+  .msg.user{flex-direction:row-reverse}
+  .msg.user .bubble{background:var(--user);border-color:#2f5598}
+  .bubble.think{background:transparent;border-style:dashed;color:var(--muted);font-size:13px;font-style:italic}
+  .bubble.tool{background:rgba(232,200,120,.08);border-color:var(--gold2);color:var(--gold);font-size:12.5px}
+  .col{display:flex;flex-direction:column;min-width:0;max-width:100%}
+  .msg.user .col{align-items:flex-end}
+  .name{font-size:11px;color:var(--gold);margin:0 4px 3px;font-weight:700;letter-spacing:.3px}
+  .msg.user .name{color:var(--muted)}
+  .reading{color:var(--muted);font-style:italic;font-size:13px;margin-right:6px}
+  .bubble p{margin:.35em 0}
+  .bubble p:first-child{margin-top:0}
+  .bubble p:last-child{margin-bottom:0}
+  .bubble ul{margin:.4em 0;padding-left:1.2em}
+  .bubble code{background:rgba(255,255,255,.08);padding:1px 5px;border-radius:5px;font-size:.92em}
+  .bubble strong{color:#fff}
+  .typing span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted);margin:0 1px;animation:bl 1s infinite}
+  .typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+  @keyframes bl{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+  .hint{color:var(--muted);font-size:13px;text-align:center;padding:8px}
+  .welcome{border:1px dashed var(--line);border-radius:var(--radius);padding:16px;background:rgba(255,255,255,.02)}
+  .welcome h2{margin:.1em 0 .3em;font-size:16px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:12.5px;color:var(--ink)}
+  .chip:hover{border-color:var(--accent)}
+
+  form#composer{position:sticky;bottom:0;padding:10px 0 14px;background:linear-gradient(transparent,var(--bg) 28%)}
+  .inwrap{display:flex;gap:9px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px 8px 8px 14px}
+  .inwrap:focus-within{border-color:var(--accent)}
+  textarea#input{
+    flex:1;background:transparent;border:0;color:var(--ink);resize:none;font:inherit;
+    max-height:160px;min-height:24px;padding:6px 0;outline:none;
+  }
+  .send{background:linear-gradient(135deg,var(--accent),var(--accent2));border:0;color:#fff;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:18px;flex:0 0 auto}
+  .send:disabled{opacity:.45;cursor:not-allowed}
+  .composer-note{font-size:11px;color:var(--muted);text-align:center;padding-top:7px}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(4,7,16,.66);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}
+  .overlay.show{display:flex}
+  .modal{background:var(--bg2);border:1px solid var(--line);border-radius:18px;max-width:560px;width:100%;max-height:88dvh;overflow:auto;box-shadow:var(--shadow)}
+  .modal header{position:sticky;top:0;background:var(--bg2);border-bottom:1px solid var(--line);padding:14px 18px}
+  .modal header h3{margin:0;font-size:16px}
+  .modal .body{padding:18px}
+  .modal .x{margin-left:auto}
+  label.fld{display:block;font-size:13px;color:var(--muted);margin:0 0 6px}
+  input[type=text],input[type=password]{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 12px;font:inherit;outline:none}
+  input:focus{border-color:var(--accent)}
+  .row{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:0;color:#fff}
+  .btn.ghost{background:transparent}
+  .btn.warn{border-color:var(--danger);color:var(--danger)}
+  .note{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.5}
+  .keystate{font-size:12px;margin-top:8px}
+  .keystate.ok{color:var(--ok)}.keystate.no{color:var(--gold)}
+
+  .sb-empty{color:var(--muted);text-align:center;padding:22px;font-size:13.5px}
+  .sb-item{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:11px;background:var(--panel)}
+  .sb-item .q{font-weight:600;margin-bottom:6px}
+  .sb-item .a{font-size:13.5px;color:var(--ink);white-space:pre-wrap}
+  .sb-item .meta{font-size:11px;color:var(--muted);margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .sb-item .del{margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--danger);border-radius:8px;padding:3px 9px;font-size:11.5px}
+  .tag{background:rgba(91,140,255,.16);border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:10.5px;color:var(--accent)}
+  .err{color:var(--danger);font-size:12.5px;margin-top:8px}
+  .footer{font-size:10.5px;color:var(--muted);text-align:center;padding:6px 14px 14px;max-width:880px;margin:0 auto}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="sigil">📜</div>
+    <div style="min-width:0">
+      <h1>The Blue Scribes</h1>
+      <p data-i18n="tagline">Assistant de règles — Warhammer: The Old World</p>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="hbtns">
+    <div class="lang" id="lang">
+      <button data-lang="fr" class="on">FR</button>
+      <button data-lang="en">EN</button>
+    </div>
+    <button class="btn" id="openSandbox" title="Bac à sable">
+      <span>🧪</span><span data-i18n="sandbox">Bac à sable</span><span class="badge" id="sbBadge">0</span>
+    </button>
+    <button class="btn" id="openSettings" title="Réglages"><span>⚙️</span></button>
+  </div>
+</header>
+
+<main>
+  <div id="chat"></div>
+  <form id="composer" autocomplete="off">
+    <div class="inwrap">
+      <textarea id="input" rows="1" data-i18n-ph="placeholder" placeholder="Posez votre question de règles…"></textarea>
+      <button class="send" id="send" type="submit" title="Envoyer">➤</button>
+    </div>
+    <div class="composer-note" data-i18n="enterhint">Entrée pour envoyer · Maj+Entrée pour un saut de ligne</div>
+  </form>
+</main>
+<div class="footer">
+  <span data-i18n="disclaimer">Outil non officiel, fan-made. Non affilié à Games Workshop. <em>Warhammer: The Old World</em> © Games Workshop Ltd. Les réponses de l'IA peuvent contenir des erreurs — le livre de règles officiel fait foi.</span>
+</div>
+
+<!-- Settings modal -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <header style="display:flex;align-items:center"><h3 data-i18n="settingsTitle">Réglages</h3><button class="btn ghost x" data-close>✕</button></header>
+    <div class="body">
+      <label class="fld" for="apiKey" data-i18n="apiKeyLabel">Clé API Anthropic</label>
+      <input type="password" id="apiKey" placeholder="sk-ant-..." spellcheck="false">
+      <div class="keystate" id="keyState"></div>
+      <div class="row">
+        <button class="btn primary" id="saveKey" data-i18n="save">Enregistrer</button>
+        <button class="btn warn" id="clearKey" data-i18n="clearKey">Effacer la clé</button>
+      </div>
+      <div class="note" data-i18n="keyNote"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Sandbox modal -->
+<div class="overlay" id="sandboxOverlay">
+  <div class="modal">
+    <header style="display:flex;align-items:center"><h3 data-i18n="sandboxTitle">Bac à sable — questions à évaluer</h3><button class="btn ghost x" data-close>✕</button></header>
+    <div class="body">
+      <div class="note" data-i18n="sandboxIntro"></div>
+      <div id="sbList" style="margin-top:14px"></div>
+      <div class="row">
+        <button class="btn" id="sbExport" data-i18n="export">Exporter (JSON)</button>
+        <button class="btn warn" id="sbClear" data-i18n="clearAll">Tout effacer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="data/rules-data.js"></script>
+<script>
+"use strict";
+/* ─────────────────────────────────────────────────────────────────────────
+   The Blue Scribes — a bring-your-own-key TOW rules chatbot.
+   The Anthropic API key lives only in this browser (localStorage) and is sent
+   only to api.anthropic.com. No backend.
+   ───────────────────────────────────────────────────────────────────────── */
+
+const MODEL = "claude-opus-4-8";
+const LS_KEY = "tow_blue_scribes_key";
+const LS_SANDBOX = "tow_blue_scribes_sandbox";
+const LS_LANG = "tow_blue_scribes_lang";
+
+/* ---------- i18n (UI chrome only; the bot replies in the question's language) ---------- */
+const I18N = {
+  fr: {
+    tagline: "Assistant de règles — Warhammer: The Old World",
+    sandbox: "Bac à sable",
+    placeholder: "Posez votre question de règles…",
+    enterhint: "Entrée pour envoyer · Maj+Entrée pour un saut de ligne",
+    disclaimer: "Outil non officiel, fan-made. Non affilié à Games Workshop. <em>Warhammer: The Old World</em> © Games Workshop Ltd. Les réponses de l'IA peuvent contenir des erreurs — le livre de règles officiel fait foi.",
+    settingsTitle: "Réglages",
+    apiKeyLabel: "Clé API Anthropic",
+    save: "Enregistrer",
+    clearKey: "Effacer la clé",
+    keyNote: "Votre clé reste dans <strong>votre navigateur</strong> (localStorage) et n'est envoyée qu'à api.anthropic.com. Obtenez-en une sur <a href='https://console.anthropic.com/settings/keys' target='_blank' rel='noopener'>console.anthropic.com</a>. Chaque conversation consomme votre crédit Anthropic.",
+    sandboxTitle: "Bac à sable — questions à évaluer",
+    sandboxIntro: "Les questions auxquelles les Scribes n'ont pas su répondre sont conservées ici, avec la réponse que vous avez fournie, en attente d'évaluation ultérieure.",
+    export: "Exporter (JSON)",
+    clearAll: "Tout effacer",
+    sbEmpty: "Aucune question en attente. Quand le bot ne saura pas répondre, l'échange sera conservé ici.",
+    keyOk: "✓ Clé enregistrée dans ce navigateur.",
+    keyNo: "Aucune clé enregistrée — ajoutez-en une pour démarrer.",
+    needKey: "Ajoutez d'abord votre clé API Anthropic (bouton ⚙️) pour discuter avec les Scribes.",
+    welcomeH: "Bienvenue, stratège.",
+    welcomeP: "Je suis l'un des <strong>Scribes Bleus</strong>. Posez-moi vos questions sur les règles de <em>The Old World</em> : règles spéciales, objets magiques, lores de magie, interactions de phase… En cas de doute je demanderai des précisions. Et si une question dépasse mes archives, je vous féliciterai et garderai votre réponse au bac à sable.",
+    exReroll: "Comment fonctionne Killing Blow ?",
+    exFear: "Différence entre Peur et Terreur ?",
+    exMagic: "Que fait le sort Drain Magic ?",
+    exClarify: "Mon unité en fuite peut-elle se rallier ?",
+    confirmClearKey: "Effacer la clé API enregistrée ?",
+    confirmClearSb: "Effacer toutes les entrées du bac à sable ?",
+    confirmDel: "Supprimer cette entrée ?",
+    savedToast: "Conservé au bac à sable.",
+    stopGen: "Arrêter",
+    nameReader: "Xirat'p",
+    nameWriter: "P'tarix",
+    readingBy: "Xirat'p lit votre demande…",
+  },
+  en: {
+    tagline: "Rules assistant — Warhammer: The Old World",
+    sandbox: "Sandbox",
+    placeholder: "Ask your rules question…",
+    enterhint: "Enter to send · Shift+Enter for a new line",
+    disclaimer: "Unofficial, fan-made tool. Not affiliated with Games Workshop. <em>Warhammer: The Old World</em> © Games Workshop Ltd. AI answers may contain errors — the official rulebook is authoritative.",
+    settingsTitle: "Settings",
+    apiKeyLabel: "Anthropic API key",
+    save: "Save",
+    clearKey: "Clear key",
+    keyNote: "Your key stays in <strong>your browser</strong> (localStorage) and is sent only to api.anthropic.com. Get one at <a href='https://console.anthropic.com/settings/keys' target='_blank' rel='noopener'>console.anthropic.com</a>. Each conversation uses your Anthropic credit.",
+    sandboxTitle: "Sandbox — questions to evaluate",
+    sandboxIntro: "Questions the Scribes couldn't answer are kept here, together with the answer you provided, pending later evaluation.",
+    export: "Export (JSON)",
+    clearAll: "Clear all",
+    sbEmpty: "No pending questions yet. When the bot can't answer, the exchange will be kept here.",
+    keyOk: "✓ Key saved in this browser.",
+    keyNo: "No key saved — add one to begin.",
+    needKey: "Add your Anthropic API key first (⚙️ button) to talk to the Scribes.",
+    welcomeH: "Welcome, strategist.",
+    welcomeP: "I am one of the <strong>Blue Scribes</strong>. Ask me anything about <em>The Old World</em> rules: special rules, magic items, lores of magic, phase interactions… If I'm unsure I'll ask for clarification. And if a question goes beyond my archives, I'll congratulate you and keep your answer in the sandbox.",
+    exReroll: "How does Killing Blow work?",
+    exFear: "Difference between Fear and Terror?",
+    exMagic: "What does the Drain Magic spell do?",
+    exClarify: "Can my fleeing unit rally?",
+    confirmClearKey: "Clear the saved API key?",
+    confirmClearSb: "Clear all sandbox entries?",
+    confirmDel: "Delete this entry?",
+    savedToast: "Kept in the sandbox.",
+    stopGen: "Stop",
+    nameReader: "Xirat'p",
+    nameWriter: "P'tarix",
+    readingBy: "Xirat'p is reading your request…",
+  }
+};
+
+let LANG = localStorage.getItem(LS_LANG) || "fr";
+function t(k){ return (I18N[LANG] && I18N[LANG][k]) || (I18N.fr[k] || k); }
+
+/* ---------- DOM ---------- */
+const $ = s => document.querySelector(s);
+const chat = $("#chat");
+const input = $("#input");
+const composer = $("#composer");
+const sendBtn = $("#send");
+
+/* ---------- knowledge base → compact system context ---------- */
+const KB = window.TOW_RULES || {rules:{},magicItems:{},armyLores:{},meta:{}};
+
+function buildKnowledgeText(){
+  const lines = [];
+  lines.push("### SPECIAL RULES (slug | name | army | description | url)");
+  for(const k of Object.keys(KB.rules)){
+    const r = KB.rules[k];
+    lines.push(`- ${k} | ${r.name} | ${r.army||""} | ${r.desc||""}${r.url? " | "+r.url : ""}`);
+  }
+  lines.push("\n### MAGIC ITEMS (category > army: name (pts) — description)");
+  for(const cat of Object.keys(KB.magicItems)){
+    const byArmy = KB.magicItems[cat]||{};
+    for(const army of Object.keys(byArmy)){
+      const items = byArmy[army]||[];
+      for(const it of items){
+        lines.push(`- [${cat}/${army}] ${it.n}${it.pts!=null?` (${it.pts} pts)`:""} — ${it.d||""}`);
+      }
+    }
+  }
+  lines.push("\n### ARMY MAGIC LORES (army: lores)");
+  for(const a of Object.keys(KB.armyLores)){
+    lines.push(`- ${a}: ${(KB.armyLores[a]||[]).join(", ")}`);
+  }
+  return lines.join("\n");
+}
+const KNOWLEDGE_TEXT = buildKnowledgeText();
+
+const SYSTEM_INSTRUCTIONS =
+`You are "The Blue Scribes", a rules assistant for the tabletop wargame Warhammer: The Old World (often abbreviated TOW). In the lore, the Blue Scribes are two Tzeentchian heralds who tirelessly travel the world collecting every spell and scrap of arcane knowledge: Xirat'p, who reads and interprets each incoming request, and P'tarix, who writes the answer. Embody that diligent, curious, slightly whimsical archivist persona (you may speak as "we", the two scribes), but stay concise and practical.
+
+# Your knowledge base
+Below this section you are given a KNOWLEDGE BASE: the game's universal and army special rules, magic items, and the magic lores available to each army, extracted from a community reference. Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
+
+# How to answer
+- Answer rules questions accurately and concisely. Lead with the direct answer, then add only the supporting detail that matters. Name the exact rule(s) you are relying on (e.g. "Killing Blow", "Fear"). When a rule entry includes a url, you may cite it.
+- LANGUAGE: always reply in the SAME language as the player's most recent message — French or English. Match them naturally. Do not switch languages on your own.
+- Use light Markdown: short paragraphs, **bold** for rule names, bullet lists for steps or conditions.
+
+# When in doubt — ask
+If the question is ambiguous, underspecified, or could refer to several different rules, units, armies, or situations, DO NOT guess. Ask one short, targeted clarifying question first (e.g. which army/unit, which phase, whether a specific rule is in play). Only answer once you have what you need.
+
+# When you don't know — congratulate and collect (the sandbox)
+If a question is genuinely outside your knowledge base and you are NOT confident of the correct ruling, NEVER invent or guess a rule. Instead:
+1. Warmly congratulate the player for finding a question beyond the Scribes' current archives (it is a delight for a collector of knowledge to find something new).
+2. Clearly say that you don't have this in your records.
+3. Ask the player to share the correct answer or their best ruling, so it can be kept for later evaluation.
+Then, ONCE the player has provided their answer, call the \`save_to_sandbox\` tool with their question, their answer, and the language. After the tool succeeds, thank them and confirm it has been kept in the sandbox to be reviewed later. Do not call the tool until the player has actually given an answer.
+
+# Boundaries
+Stay on Warhammer: The Old World rules. If asked something unrelated, briefly and politely steer back. Never fabricate page numbers, point costs, or rules text that isn't supported by your knowledge base or well-established core mechanics.
+
+# KNOWLEDGE BASE
+`;
+
+/* ---------- the save_to_sandbox tool ---------- */
+const TOOLS = [{
+  name: "save_to_sandbox",
+  description: "Record a rules question the Scribes could not answer, together with the answer the player provided, so it can be evaluated later. Only call this AFTER the player has supplied an answer or ruling to a question that was outside your knowledge base.",
+  input_schema: {
+    type: "object",
+    properties: {
+      question: { type: "string", description: "The player's rules question, in their own words." },
+      player_answer: { type: "string", description: "The answer or ruling the player provided." },
+      language: { type: "string", enum:["fr","en"], description: "Language of the exchange." },
+      note: { type: "string", description: "Optional short note from the Scribes (e.g. what to verify against the official rulebook)." }
+    },
+    required: ["question","player_answer","language"]
+  }
+}];
+
+function runTool(name, inputObj){
+  if(name === "save_to_sandbox"){
+    const entry = {
+      id: "sb_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      question: String(inputObj.question||"").trim(),
+      player_answer: String(inputObj.player_answer||"").trim(),
+      language: (inputObj.language==="en"?"en":"fr"),
+      note: String(inputObj.note||"").trim(),
+      status: "pending-evaluation",
+      created_at: new Date().toISOString()
+    };
+    const list = loadSandbox();
+    list.unshift(entry);
+    saveSandbox(list);
+    return JSON.stringify({status:"saved", id:entry.id, total:list.length});
+  }
+  return JSON.stringify({status:"error", message:"unknown tool"});
+}
+
+/* ---------- sandbox storage ---------- */
+function loadSandbox(){
+  try{ return JSON.parse(localStorage.getItem(LS_SANDBOX)||"[]"); }catch(e){ return []; }
+}
+function saveSandbox(list){
+  localStorage.setItem(LS_SANDBOX, JSON.stringify(list));
+  updateSandboxBadge();
+}
+function updateSandboxBadge(){ $("#sbBadge").textContent = loadSandbox().length; }
+
+/* ---------- API key ---------- */
+function getKey(){ return localStorage.getItem(LS_KEY) || ""; }
+function setKey(k){ if(k) localStorage.setItem(LS_KEY,k); else localStorage.removeItem(LS_KEY); refreshKeyState(); }
+function refreshKeyState(){
+  const ks = $("#keyState");
+  if(getKey()){ ks.textContent = t("keyOk"); ks.className="keystate ok"; }
+  else { ks.textContent = t("keyNo"); ks.className="keystate no"; }
+}
+
+/* ---------- conversation state ---------- */
+let messages = [];     // Anthropic message objects {role, content}
+let busy = false;
+
+/* ---------- tiny safe markdown ---------- */
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function mdToHtml(src){
+  const lines = esc(src).split(/\n/);
+  let html="", inList=false;
+  const inline = s => s
+    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g,"$1<em>$2</em>")
+    .replace(/`([^`]+)`/g,"<code>$1</code>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/(^|[\s(])((https?:\/\/[^\s<)]+))/g,'$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+  for(let ln of lines){
+    if(/^\s*[-*]\s+/.test(ln)){
+      if(!inList){ html+="<ul>"; inList=true; }
+      html += "<li>"+inline(ln.replace(/^\s*[-*]\s+/,""))+"</li>";
+    } else {
+      if(inList){ html+="</ul>"; inList=false; }
+      if(ln.trim()==="") html+="";
+      else html += "<p>"+inline(ln)+"</p>";
+    }
+  }
+  if(inList) html+="</ul>";
+  return html || "<p></p>";
+}
+
+/* ---------- rendering ---------- */
+function clearChat(){ chat.innerHTML=""; }
+function scrollDown(){ requestAnimationFrame(()=> window.scrollTo(0, document.body.scrollHeight)); }
+
+function showWelcome(){
+  clearChat();
+  const w = document.createElement("div");
+  w.className="welcome";
+  w.innerHTML = `<h2>${t("welcomeH")}</h2><div>${t("welcomeP")}</div>
+    <div class="chips">
+      <button class="chip" type="button">${t("exReroll")}</button>
+      <button class="chip" type="button">${t("exFear")}</button>
+      <button class="chip" type="button">${t("exMagic")}</button>
+      <button class="chip" type="button">${t("exClarify")}</button>
+    </div>`;
+  chat.appendChild(w);
+  w.querySelectorAll(".chip").forEach(c=> c.addEventListener("click",()=>{
+    input.value = c.textContent; autoGrow(); input.focus();
+  }));
+  if(!getKey()){
+    const h = document.createElement("div");
+    h.className="hint"; h.textContent = t("needKey");
+    chat.appendChild(h);
+  }
+}
+
+function addBubble(role, kind, opts){
+  opts = opts || {};
+  const m = document.createElement("div");
+  m.className = "msg "+(role==="user"?"user":"bot");
+  const who = document.createElement("div");
+  who.className="who";
+  who.textContent = opts.avatar || (role==="user" ? "🗡️" : "📜");
+  const col = document.createElement("div");
+  col.className="col";
+  const name = document.createElement("div");
+  name.className="name";
+  if(opts.name) name.textContent = opts.name; else name.style.display="none";
+  const b = document.createElement("div");
+  b.className = "bubble"+(kind?(" "+kind):"");
+  col.appendChild(name); col.appendChild(b);
+  m.appendChild(who); m.appendChild(col);
+  chat.appendChild(m);
+  b._root = m; b._who = who; b._name = name;
+  scrollDown();
+  return b;
+}
+
+/* Re-attribute a bubble to one of the two Blue Scribes (avatar + name caption). */
+function setSpeaker(bubble, avatar, name){
+  if(!bubble) return;
+  if(bubble._who && avatar) bubble._who.textContent = avatar;
+  if(bubble._name && name){ bubble._name.textContent = name; bubble._name.style.display=""; }
+}
+
+function addUserMessage(text){
+  const b = addBubble("user");
+  b.textContent = text;
+}
+
+/* ---------- the API turn (streaming + tool loop) ---------- */
+async function streamOnce(apiMessages, onText, onThinking){
+  const body = {
+    model: MODEL,
+    max_tokens: 8192,
+    stream: true,
+    thinking: { type: "adaptive", display: "summarized" },
+    system: [
+      { type:"text", text: SYSTEM_INSTRUCTIONS + KNOWLEDGE_TEXT, cache_control:{type:"ephemeral"} }
+    ],
+    tools: TOOLS,
+    messages: apiMessages
+  };
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "x-api-key": getKey(),
+      "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if(!resp.ok || !resp.body){
+    let detail="";
+    try{ const j = await resp.json(); detail = j.error?.message || JSON.stringify(j); }catch(e){ detail = resp.statusText; }
+    const err = new Error(detail); err.status = resp.status; throw err;
+  }
+
+  // SSE parse → accumulate content blocks (text / thinking / tool_use), preserving signatures.
+  const reader = resp.body.getReader();
+  const dec = new TextDecoder();
+  let buf="";
+  const blocks = [];           // final assistant content blocks
+  let stopReason = null;
+
+  function handleEvent(evt){
+    const d = evt.data;
+    if(!d) return;
+    let j; try{ j = JSON.parse(d); }catch(e){ return; }
+    switch(j.type){
+      case "content_block_start": {
+        const cb = j.content_block;
+        if(cb.type==="text") blocks[j.index]={type:"text", text:cb.text||""};
+        else if(cb.type==="thinking") blocks[j.index]={type:"thinking", thinking:cb.thinking||"", signature:cb.signature||""};
+        else if(cb.type==="redacted_thinking") blocks[j.index]={type:"redacted_thinking", data:cb.data||""};
+        else if(cb.type==="tool_use") blocks[j.index]={type:"tool_use", id:cb.id, name:cb.name, input:{}, _json:""};
+        break;
+      }
+      case "content_block_delta": {
+        const blk = blocks[j.index]; const dl = j.delta;
+        if(!blk) break;
+        if(dl.type==="text_delta"){ blk.text+=dl.text; onText && onText(dl.text); }
+        else if(dl.type==="thinking_delta"){ blk.thinking+=dl.thinking; onThinking && onThinking(dl.thinking); }
+        else if(dl.type==="signature_delta"){ blk.signature=(blk.signature||"")+dl.signature; }
+        else if(dl.type==="input_json_delta"){ blk._json+=dl.partial_json; }
+        break;
+      }
+      case "content_block_stop": {
+        const blk = blocks[j.index];
+        if(blk && blk.type==="tool_use"){
+          try{ blk.input = blk._json ? JSON.parse(blk._json) : {}; }catch(e){ blk.input={}; }
+          delete blk._json;
+        }
+        break;
+      }
+      case "message_delta": { if(j.delta && j.delta.stop_reason) stopReason=j.delta.stop_reason; break; }
+      case "error": { throw new Error(j.error?.message || "stream error"); }
+    }
+  }
+
+  while(true){
+    const {value, done} = await reader.read();
+    if(done) break;
+    buf += dec.decode(value, {stream:true});
+    const parts = buf.split("\n\n");
+    buf = parts.pop();
+    for(const part of parts){
+      const ev = {data:""};
+      for(const line of part.split("\n")){
+        if(line.startsWith("data:")) ev.data += line.slice(5).trim();
+      }
+      handleEvent(ev);
+    }
+  }
+  // clean undefined holes
+  const clean = blocks.filter(Boolean).map(b=>{ if(b.type==="tool_use") delete b._json; return b; });
+  return { content: clean, stopReason };
+}
+
+function handleApiError(err, bubble){
+  let msg;
+  const s = err.status;
+  if(s===401) msg = LANG==="fr"? "Clé API invalide. Vérifiez-la dans ⚙️ Réglages." : "Invalid API key. Check it under ⚙️ Settings.";
+  else if(s===429) msg = LANG==="fr"? "Limite de débit atteinte (429). Réessayez dans un instant." : "Rate limited (429). Try again shortly.";
+  else if(s===529) msg = LANG==="fr"? "API surchargée (529). Réessayez bientôt." : "API overloaded (529). Try again soon.";
+  else if(s===400 && /credit|billing/i.test(err.message||"")) msg = LANG==="fr"? "Problème de crédit/facturation sur votre compte Anthropic." : "Credit/billing issue on your Anthropic account.";
+  else msg = (LANG==="fr"? "Erreur : " : "Error: ") + (err.message||"unknown");
+  if(bubble){ bubble.classList.add("tool"); bubble.style.color="var(--danger)"; bubble.style.borderColor="var(--danger)"; bubble.innerHTML = "<p>"+esc(msg)+"</p>"; }
+}
+
+/* ---------- send ---------- */
+async function send(text){
+  if(busy) return;
+  text = text.trim();
+  if(!text) return;
+  if(!getKey()){ openSettings(); return; }
+  // remove welcome if present
+  const w = chat.querySelector(".welcome"); if(w){ clearChat(); }
+  const hint = chat.querySelector(".hint"); if(hint) hint.remove();
+
+  addUserMessage(text);
+  messages.push({ role:"user", content:text });
+  input.value=""; autoGrow();
+  await runTurnClean();
+}
+
+/* ---------- clean turn implementation ----------
+   Xirat'p reads & interprets the request (placeholder + thinking);
+   P'tarix writes the answer (as soon as text starts streaming).            */
+function readingBubble(){
+  const b = addBubble("bot", null, { avatar:"🔮", name:t("nameReader") });
+  b.innerHTML = `<span class="reading">${t("readingBy")}</span><span class="typing"><span></span><span></span><span></span></span>`;
+  return b;
+}
+async function runTurnClean(){
+  busy=true; sendBtn.disabled=true;
+  let answerEl = readingBubble();
+  let thinkEl = null;
+  let gotText=false;
+
+  const onText=(chunk)=>{
+    if(!gotText){
+      // first words: hand off from Xirat'p (reading) to P'tarix (writing)
+      setSpeaker(answerEl, "🖋️", t("nameWriter"));
+      answerEl.innerHTML=""; gotText=true; answerEl.dataset.raw="";
+    }
+    answerEl.dataset.raw += chunk;
+    answerEl.innerHTML = mdToHtml(answerEl.dataset.raw);
+    scrollDown();
+  };
+  const onThinking=(chunk)=>{
+    if(!thinkEl){
+      const m=document.createElement("div"); m.className="msg bot";
+      const who=document.createElement("div"); who.className="who"; who.textContent="🔮";
+      const col=document.createElement("div"); col.className="col";
+      const nm=document.createElement("div"); nm.className="name"; nm.textContent=t("nameReader");
+      thinkEl=document.createElement("div"); thinkEl.className="bubble think"; thinkEl.dataset.raw="";
+      col.appendChild(nm); col.appendChild(thinkEl);
+      m.appendChild(who); m.appendChild(col);
+      chat.insertBefore(m, answerEl._root);
+    }
+    thinkEl.dataset.raw += chunk;
+    thinkEl.textContent = thinkEl.dataset.raw;
+    scrollDown();
+  };
+
+  try{
+    let guard=0;
+    while(guard++<6){
+      const {content, stopReason} = await streamOnce(messages, onText, onThinking);
+      messages.push({role:"assistant", content});
+
+      if(stopReason==="tool_use"){
+        const toolResults=[];
+        for(const blk of content){
+          if(blk.type==="tool_use"){
+            const out = runTool(blk.name, blk.input);
+            const note = addBubble("bot","tool");
+            note.textContent = (LANG==="fr"? "🧪 "+t("savedToast") : "🧪 "+t("savedToast"));
+            toolResults.push({type:"tool_result", tool_use_id:blk.id, content:out});
+          }
+        }
+        messages.push({role:"user", content:toolResults});
+        // if this turn was tool-only (no prose), drop the empty reading placeholder
+        if(!gotText && !answerEl.dataset.raw){ answerEl._root.remove(); }
+        // new reading bubble for P'tarix's follow-up confirmation
+        answerEl = readingBubble();
+        thinkEl=null; gotText=false;
+        continue;
+      }
+
+      if(!gotText && !answerEl.dataset.raw){ answerEl._root.remove(); }
+      break;
+    }
+  }catch(err){
+    handleApiError(err, answerEl);
+  }finally{
+    busy=false; sendBtn.disabled=false; updateSandboxBadge();
+  }
+}
+
+/* ---------- sandbox UI ---------- */
+function renderSandbox(){
+  const list = loadSandbox();
+  const wrap = $("#sbList");
+  if(!list.length){ wrap.innerHTML = `<div class="sb-empty">${t("sbEmpty")}</div>`; return; }
+  wrap.innerHTML = "";
+  for(const e of list){
+    const d = document.createElement("div");
+    d.className="sb-item";
+    const date = new Date(e.created_at).toLocaleString();
+    d.innerHTML =
+      `<div class="q">${esc(e.question||"")}</div>
+       <div class="a">${esc(e.player_answer||"")}</div>
+       ${e.note? `<div class="meta"><em>${esc(e.note)}</em></div>`:""}
+       <div class="meta"><span class="tag">${(e.language||"fr").toUpperCase()}</span><span>${esc(date)}</span>
+       <button class="del" data-id="${e.id}">✕ ${LANG==="fr"?"Suppr.":"Delete"}</button></div>`;
+    wrap.appendChild(d);
+  }
+  wrap.querySelectorAll(".del").forEach(b=> b.addEventListener("click",()=>{
+    if(!confirm(t("confirmDel"))) return;
+    saveSandbox(loadSandbox().filter(x=>x.id!==b.dataset.id));
+    renderSandbox();
+  }));
+}
+
+/* ---------- modals ---------- */
+function openSettings(){ $("#apiKey").value=getKey(); refreshKeyState(); $("#settingsOverlay").classList.add("show"); }
+function openSandbox(){ renderSandbox(); $("#sandboxOverlay").classList.add("show"); }
+document.querySelectorAll("[data-close]").forEach(b=> b.addEventListener("click", e=> e.target.closest(".overlay").classList.remove("show")));
+document.querySelectorAll(".overlay").forEach(o=> o.addEventListener("click", e=>{ if(e.target===o) o.classList.remove("show"); }));
+
+$("#openSettings").addEventListener("click", openSettings);
+$("#openSandbox").addEventListener("click", openSandbox);
+$("#saveKey").addEventListener("click", ()=>{ setKey($("#apiKey").value.trim()); const w=chat.querySelector(".hint"); if(w) w.remove(); });
+$("#clearKey").addEventListener("click", ()=>{ if(confirm(t("confirmClearKey"))){ $("#apiKey").value=""; setKey(""); } });
+$("#sbClear").addEventListener("click", ()=>{ if(confirm(t("confirmClearSb"))){ saveSandbox([]); renderSandbox(); } });
+$("#sbExport").addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify(loadSandbox(),null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "blue-scribes-sandbox.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+/* ---------- language ---------- */
+function applyLang(){
+  document.documentElement.lang = LANG;
+  $("#lang").querySelectorAll("button").forEach(b=> b.classList.toggle("on", b.dataset.lang===LANG));
+  document.querySelectorAll("[data-i18n]").forEach(el=> el.innerHTML = t(el.getAttribute("data-i18n")));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=> el.placeholder = t(el.getAttribute("data-i18n-ph")));
+  refreshKeyState();
+  // refresh welcome if shown
+  if(chat.querySelector(".welcome")) showWelcome();
+}
+$("#lang").querySelectorAll("button").forEach(b=> b.addEventListener("click",()=>{
+  LANG=b.dataset.lang; localStorage.setItem(LS_LANG,LANG); applyLang();
+}));
+
+/* ---------- composer ---------- */
+function autoGrow(){ input.style.height="auto"; input.style.height=Math.min(input.scrollHeight,160)+"px"; }
+input.addEventListener("input", autoGrow);
+input.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); composer.requestSubmit(); }
+});
+composer.addEventListener("submit", e=>{ e.preventDefault(); send(input.value); });
+
+/* ---------- init ---------- */
+applyLang();
+updateSandboxBadge();
+showWelcome();
+</script>
+</body>
+</html>
