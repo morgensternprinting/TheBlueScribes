@@ -57,7 +57,7 @@
     { id: "large", tokens: 1200000 },
   ];
 
-  let state = { loggedIn: false, email: localStorage.getItem(LS_EMAIL) || "", balance: null };
+  let state = { loggedIn: false, email: localStorage.getItem(LS_EMAIL) || "", balance: null, unlimited: false };
   const listeners = [];
   function emit() { for (const fn of listeners) { try { fn(Object.assign({}, state)); } catch (e) {} } }
 
@@ -182,7 +182,7 @@
   function setMsg(text, kind) { msgEl.textContent = text || ""; msgEl.className = "bs-msg" + (kind ? " " + kind : ""); }
   // 1 écu = 1000 tokens. Balance is stored in tokens internally; display in écus.
   function toEcus(tokens) { return tokens == null ? null : Math.round(tokens / 1000); }
-  function renderBalance() { for (const el of balanceEls) if (el) el.textContent = fmt(toEcus(state.balance)); }
+  function renderBalance() { for (const el of balanceEls) if (el) el.textContent = state.unlimited ? "∞" : fmt(toEcus(state.balance)); }
   function renderMode() {
     const account = state.loggedIn;
     formWrap.hidden = account; authBtns.hidden = !account;
@@ -207,7 +207,7 @@
     try {
       const data = await api(mode === "signup" ? "/auth/signup" : "/auth/login", { method: "POST", body: { email, password } });
       setSession(data.token, data.email);
-      state.balance = data.balance;
+      state.balance = data.balance; state.unlimited = !!data.unlimited;
       renderBalance(); renderMode(); emit();
       setMsg(mode === "signup" ? T.welcome : T.loggedIn, "ok");
     } catch (e) {
@@ -217,7 +217,7 @@
 
   async function logout() {
     try { await api("/auth/logout", { method: "POST" }); } catch (e) {}
-    setSession("", ""); state.balance = null; state.loggedIn = false;
+    setSession("", ""); state.balance = null; state.loggedIn = false; state.unlimited = false;
     renderBalance(); renderMode(); emit(); setMsg("");
   }
 
@@ -236,10 +236,10 @@
     if (!token()) { state.loggedIn = false; state.balance = null; renderBalance(); renderMode(); emit(); return; }
     try {
       const data = await api("/account");
-      state.loggedIn = true; state.email = data.email; state.balance = data.balance;
+      state.loggedIn = true; state.email = data.email; state.balance = data.balance; state.unlimited = !!data.unlimited;
       localStorage.setItem(LS_EMAIL, data.email);
     } catch (e) {
-      if (e.status === 401) { setSession("", ""); state.loggedIn = false; state.balance = null; }
+      if (e.status === 401) { setSession("", ""); state.loggedIn = false; state.balance = null; state.unlimited = false; }
     }
     renderBalance(); renderMode(); emit();
   }

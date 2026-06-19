@@ -32,6 +32,7 @@
  *   MAX_TOKENS       per-response cap (default 8192, hard max 16000)
  *   WELCOME_TOKENS   credit granted on sign-up (default 10000)
  *   BILLING_GRANULARITY  round debits up to this many tokens (default 1000)
+ *   UNLIMITED_EMAILS comma-separated emails that bypass the wallet (owner/staff)
  *   SITE_URL         used to build Stripe success/cancel URLs (default ALLOWED_ORIGIN)
  */
 
@@ -74,9 +75,11 @@ async function chat(request, env, ctx, cors) {
   const user = await requireUser(request, env);
   if (!user) return json({ error: { message: "Sign in to ask the Scribes.", code: "auth_required" } }, 401, cors);
 
-  // 2) Wallet gate — must have tokens left. We cannot know the exact cost in
-  //    advance, so we require a positive balance and debit the real usage after.
-  if (user.token_balance <= 0) {
+  // 2) Wallet gate — must have tokens left, UNLESS this is an unlimited (owner)
+  //    account (email listed in UNLIMITED_EMAILS). We cannot know the exact cost
+  //    in advance, so we require a positive balance and debit the real usage after.
+  const unlimited = isUnlimited(user.email, env);
+  if (!unlimited && user.token_balance <= 0) {
     return json({ error: { message: "Out of tokens. Recharge to keep asking.", code: "no_tokens", balance: 0 } }, 402, cors);
   }
 
@@ -110,17 +113,21 @@ async function chat(request, env, ctx, cors) {
     return new Response(detail, { status: upstream.status, headers: { ...cors, "content-type": upstream.headers.get("content-type") || "application/json" } });
   }
 
-  // 4) Tee the stream: one copy to the browser, one parsed here to read the final
-  //    token usage and debit the wallet (after the response, via waitUntil).
-  const [toClient, toMeter] = upstream.body.tee();
-  ctx.waitUntil(meterAndDebit(toMeter, env, user.id));
+  // 4) Forward the stream to the browser. For metered accounts, tee it and debit
+  //    the real usage afterwards; unlimited (owner) accounts are never charged.
+  let clientBody = upstream.body;
+  if (!unlimited) {
+    const [toClient, toMeter] = upstream.body.tee();
+    clientBody = toClient;
+    ctx.waitUntil(meterAndDebit(toMeter, env, user.id));
+  }
 
   const headers = new Headers(cors);
   headers.set("content-type", upstream.headers.get("content-type") || "text/event-stream; charset=utf-8");
   headers.set("cache-control", "no-store");
   // Optimistic (pre-debit) balance; the client refreshes /account after the turn.
-  headers.set("x-tokens-remaining", String(user.token_balance));
-  return new Response(toClient, { status: 200, headers });
+  headers.set("x-tokens-remaining", unlimited ? "-1" : String(user.token_balance));
+  return new Response(clientBody, { status: 200, headers });
 }
 
 // Read the SSE copy, extract usage, debit input+output tokens (rounded up).
@@ -183,7 +190,7 @@ async function authSignup(request, env, cors) {
       .bind(id, welcome, nowIso()),
   ]);
   const token = await newSession(env, id);
-  return json({ token, email: lc, balance: welcome }, 200, cors);
+  return json({ token, email: lc, balance: welcome, unlimited: isUnlimited(lc, env) }, 200, cors);
 }
 
 async function authLogin(request, env, cors) {
@@ -198,7 +205,7 @@ async function authLogin(request, env, cors) {
   if (!u || !ok) return json({ error: { message: "Invalid email or password." } }, 401, cors);
 
   const token = await newSession(env, u.id);
-  return json({ token, email: u.email, balance: u.token_balance }, 200, cors);
+  return json({ token, email: u.email, balance: u.token_balance, unlimited: isUnlimited(u.email, env) }, 200, cors);
 }
 
 async function authLogout(request, env, cors) {
@@ -210,7 +217,7 @@ async function authLogout(request, env, cors) {
 async function accountInfo(request, env, cors) {
   const user = await requireUser(request, env);
   if (!user) return json({ error: { message: "Not signed in", code: "auth_required" } }, 401, cors);
-  return json({ email: user.email, balance: user.token_balance }, 200, cors);
+  return json({ email: user.email, balance: user.token_balance, unlimited: isUnlimited(user.email, env) }, 200, cors);
 }
 
 /* ───────────────────────────── billing (Stripe) ───────────────────────────── */
@@ -303,6 +310,13 @@ function bearer(request) {
   const h = request.headers.get("authorization") || "";
   const m = /^Bearer\s+(.+)$/i.exec(h);
   return m ? m[1].trim() : "";
+}
+
+// Owner / staff accounts that bypass the wallet entirely (no balance check, no
+// debit). Set the UNLIMITED_EMAILS var to a comma-separated list of emails.
+function isUnlimited(email, env) {
+  const list = String(env.UNLIMITED_EMAILS || "").toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
+  return list.includes(String(email || "").toLowerCase());
 }
 
 function validateCreds(email, password) {
