@@ -92,14 +92,14 @@
     style.textContent = `
       .bs-fab{position:fixed;top:12px;right:12px;z-index:60;display:flex;align-items:center;gap:6px;
         padding:8px 12px;border-radius:999px;border:1px solid var(--line,#3a4a6a);cursor:pointer;
-        background:var(--panel,#10182e);color:var(--ink,#dfe7ff);font:600 13px/1 system-ui,sans-serif;
+        background:var(--panel,#10182e);color:#e9f0ff;font:600 13px/1 system-ui,sans-serif;
         box-shadow:0 2px 10px rgba(0,0,0,.3)}
       .bs-fab:hover{border-color:var(--accent,#5b8cff)}
       .bs-fab .bs-bal{opacity:.85;font-weight:700}
       .bs-overlay{position:fixed;inset:0;z-index:70;background:rgba(4,8,20,.55);display:none;
         align-items:flex-start;justify-content:center;padding:64px 16px}
       .bs-overlay.show{display:flex}
-      .bs-panel{width:min(420px,94vw);background:var(--panel,#0f1830);color:var(--ink,#dfe7ff);
+      .bs-panel{width:min(420px,94vw);background:#0f1830;color:#e9f0ff;
         border:1px solid var(--line,#324063);border-radius:14px;padding:18px;
         box-shadow:0 18px 60px rgba(0,0,0,.5);font:14px/1.5 system-ui,sans-serif}
       .bs-panel h2{margin:0 0 4px;font-size:18px}
@@ -115,9 +115,9 @@
       .bs-msg{min-height:18px;margin:8px 0;font-size:13px}
       .bs-msg.err{color:var(--danger,#ff6b6b)} .bs-msg.ok{color:#5fd28a}
       .bs-packs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
-      .bs-pack{border:1px solid var(--line,#324063);border-radius:10px;padding:10px;text-align:center;cursor:pointer;background:var(--bg,#0a1226)}
-      .bs-pack:hover{border-color:var(--accent,#5b8cff)}
-      .bs-pack b{display:block;font-size:13px} .bs-pack span{font-size:11px;opacity:.8}
+      .bs-pack{border:1px solid #3a55a0;border-radius:10px;padding:10px;text-align:center;cursor:pointer;background:#16203c}
+      .bs-pack:hover{border-color:#e8c878;background:#1c2950}
+      .bs-pack b{display:block;font-size:13px;color:#f2e6c4} .bs-pack span{font-size:11px;color:#c3d2f5}
       .bs-close{float:right;background:none;border:none;color:inherit;font-size:18px;cursor:pointer;opacity:.7}
       .bs-hint{font-size:11px;opacity:.7;margin-top:8px}
       @media(max-width:560px){.bs-fab{top:8px;right:8px;padding:6px 10px;font-size:12px}}
