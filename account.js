@@ -29,7 +29,7 @@
     title: "Mon compte", tokens: "Écus", balance: "Solde",
     login: "Se connecter", signup: "Créer un compte", logout: "Se déconnecter",
     email: "Adresse e-mail", password: "Mot de passe (8+ caractères)",
-    recharge: "Recharger des écus", buy: "Acheter",
+    recharge: "🪙 Refaire le plein d'écus", support: "❤️ Soutiens le site — tes écus le font vivre", buy: "Acheter",
     needLogin: "Connecte-toi pour interroger les Scribes.",
     toggleToSignup: "Pas de compte ? En créer un", toggleToLogin: "Déjà un compte ? Se connecter",
     small: "Petit", medium: "Moyen", large: "Grand", tokensSuffix: "écus",
@@ -41,7 +41,7 @@
     title: "My account", tokens: "Écus", balance: "Balance",
     login: "Log in", signup: "Create account", logout: "Log out",
     email: "Email address", password: "Password (8+ characters)",
-    recharge: "Recharge écus", buy: "Buy",
+    recharge: "🪙 Top up your écus", support: "❤️ Support the site — your écus keep it alive", buy: "Buy",
     needLogin: "Sign in to ask the Scribes.",
     toggleToSignup: "No account? Create one", toggleToLogin: "Have an account? Log in",
     small: "Small", medium: "Medium", large: "Large", tokensSuffix: "écus",
@@ -57,7 +57,7 @@
     { id: "large", tokens: 1200000 },
   ];
 
-  let state = { loggedIn: false, email: localStorage.getItem(LS_EMAIL) || "", balance: null, unlimited: false };
+  let state = { loggedIn: false, email: localStorage.getItem(LS_EMAIL) || "", balance: null, unlimited: false, freeLeft: 0 };
   const listeners = [];
   function emit() { for (const fn of listeners) { try { fn(Object.assign({}, state)); } catch (e) {} } }
 
@@ -96,13 +96,17 @@
         box-shadow:0 2px 10px rgba(0,0,0,.3)}
       .bs-fab:hover{border-color:var(--accent,#5b8cff)}
       .bs-fab .bs-bal{opacity:.85;font-weight:700}
-      .bs-overlay{position:fixed;inset:0;z-index:70;background:rgba(4,8,20,.55);display:none;
-        align-items:flex-start;justify-content:center;padding:64px 16px}
+      .bs-overlay{position:fixed;inset:0;z-index:70;background:rgba(4,8,20,.6);display:none;
+        align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
       .bs-overlay.show{display:flex}
-      .bs-panel{width:min(420px,94vw);background:#0f1830;color:#e9f0ff;
+      .bs-panel{width:min(420px,94vw);max-height:calc(100dvh - 60px);overflow:auto;background:#0f1830;color:#e9f0ff;
         border:1px solid var(--line,#324063);border-radius:14px;padding:18px;
         box-shadow:0 18px 60px rgba(0,0,0,.5);font:14px/1.5 system-ui,sans-serif}
       .bs-panel h2{margin:0 0 4px;font-size:18px}
+      .bs-free{margin:10px 0;padding:9px 11px;border-radius:9px;border:1px solid #caa64a;
+        background:rgba(232,200,120,.12);color:#f2e6c4;font-size:13px;font-weight:600}
+      .bs-recharge{margin:16px 0 2px;font-size:15.5px;color:#f2e6c4}
+      .bs-support{font-size:12px;color:#c3d2f5;margin-bottom:8px}
       .bs-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0}
       .bs-bigbal{font-size:26px;font-weight:800}
       .bs-fld{width:100%;box-sizing:border-box;margin:6px 0;padding:10px;border-radius:8px;
@@ -149,8 +153,10 @@
 
         <div data-account hidden>
           <div class="bs-row"><span>${T.balance}</span><span class="bs-bigbal" data-bal>—</span></div>
+          <div class="bs-free" data-free hidden></div>
           <div class="bs-row"><span data-email-lbl></span><button class="bs-btn ghost" data-logout>${T.logout}</button></div>
-          <h3 style="margin:14px 0 4px;font-size:14px">${T.recharge}</h3>
+          <h3 class="bs-recharge">${T.recharge}</h3>
+          <div class="bs-support">${T.support}</div>
           <div class="bs-packs" data-packs></div>
           <div class="bs-hint">${T.buyHint}</div>
         </div>
@@ -182,7 +188,18 @@
   function setMsg(text, kind) { msgEl.textContent = text || ""; msgEl.className = "bs-msg" + (kind ? " " + kind : ""); }
   // 1 écu = 1000 tokens. Balance is stored in tokens internally; display in écus.
   function toEcus(tokens) { return tokens == null ? null : Math.round(tokens / 1000); }
-  function renderBalance() { for (const el of balanceEls) if (el) el.textContent = state.unlimited ? "∞" : fmt(toEcus(state.balance)); }
+  function freeText(n) {
+    return FR ? ("🎁 " + n + " question" + (n > 1 ? "s" : "") + " offerte" + (n > 1 ? "s" : "") + " restante" + (n > 1 ? "s" : ""))
+              : ("🎁 " + n + " free question" + (n > 1 ? "s" : "") + " left");
+  }
+  function renderBalance() {
+    const big = root && root.querySelector("[data-bal]");
+    if (big) big.textContent = state.unlimited ? "∞" : fmt(toEcus(state.balance));
+    const fb = fab && fab.querySelector(".bs-bal");
+    if (fb) fb.textContent = state.unlimited ? "∞" : (state.freeLeft > 0 ? "🎁" + state.freeLeft : fmt(toEcus(state.balance)));
+    const fr = root && root.querySelector("[data-free]");
+    if (fr) { if (!state.unlimited && state.freeLeft > 0) { fr.hidden = false; fr.textContent = freeText(state.freeLeft); } else fr.hidden = true; }
+  }
   function renderMode() {
     const account = state.loggedIn;
     formWrap.hidden = account; authBtns.hidden = !account;
@@ -207,7 +224,7 @@
     try {
       const data = await api(mode === "signup" ? "/auth/signup" : "/auth/login", { method: "POST", body: { email, password } });
       setSession(data.token, data.email);
-      state.balance = data.balance; state.unlimited = !!data.unlimited;
+      state.balance = data.balance; state.unlimited = !!data.unlimited; state.freeLeft = Number(data.free_questions || 0);
       renderBalance(); renderMode(); emit();
       setMsg(mode === "signup" ? T.welcome : T.loggedIn, "ok");
     } catch (e) {
@@ -217,7 +234,7 @@
 
   async function logout() {
     try { await api("/auth/logout", { method: "POST" }); } catch (e) {}
-    setSession("", ""); state.balance = null; state.loggedIn = false; state.unlimited = false;
+    setSession("", ""); state.balance = null; state.loggedIn = false; state.unlimited = false; state.freeLeft = 0;
     renderBalance(); renderMode(); emit(); setMsg("");
   }
 
@@ -233,13 +250,13 @@
   }
 
   async function refresh() {
-    if (!token()) { state.loggedIn = false; state.balance = null; renderBalance(); renderMode(); emit(); return; }
+    if (!token()) { state.loggedIn = false; state.balance = null; state.freeLeft = 0; renderBalance(); renderMode(); emit(); return; }
     try {
       const data = await api("/account");
-      state.loggedIn = true; state.email = data.email; state.balance = data.balance; state.unlimited = !!data.unlimited;
+      state.loggedIn = true; state.email = data.email; state.balance = data.balance; state.unlimited = !!data.unlimited; state.freeLeft = Number(data.free_questions || 0);
       localStorage.setItem(LS_EMAIL, data.email);
     } catch (e) {
-      if (e.status === 401) { setSession("", ""); state.loggedIn = false; state.balance = null; state.unlimited = false; }
+      if (e.status === 401) { setSession("", ""); state.loggedIn = false; state.balance = null; state.unlimited = false; state.freeLeft = 0; }
     }
     renderBalance(); renderMode(); emit();
   }

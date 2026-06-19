@@ -30,7 +30,8 @@
  * Optional vars:
  *   ALLOWED_ORIGIN   site origin (default "*")     MODEL (default claude-opus-4-8)
  *   MAX_TOKENS       per-response cap (default 8192, hard max 16000)
- *   WELCOME_TOKENS   credit granted on sign-up (default 10000)
+ *   WELCOME_TOKENS   écu credit granted on sign-up (default 0 — the trial is free questions)
+ *   FREE_QUESTIONS   free questions per email, lifetime (default 3)
  *   BILLING_GRANULARITY  round debits up to this many tokens (default 1000)
  *   UNLIMITED_EMAILS comma-separated emails that bypass the wallet (owner/staff)
  *   SITE_URL         used to build Stripe success/cancel URLs (default ALLOWED_ORIGIN)
@@ -75,11 +76,14 @@ async function chat(request, env, ctx, cors) {
   const user = await requireUser(request, env);
   if (!user) return json({ error: { message: "Sign in to ask the Scribes.", code: "auth_required" } }, 401, cors);
 
-  // 2) Wallet gate — must have tokens left, UNLESS this is an unlimited (owner)
-  //    account (email listed in UNLIMITED_EMAILS). We cannot know the exact cost
-  //    in advance, so we require a positive balance and debit the real usage after.
+  // 2) Access gate. An account is allowed when it is unlimited (owner), still has
+  //    FREE QUESTIONS left (a one-time, lifetime trial per email), or has écus.
+  //    We only gate the FIRST call of a question (x-new-turn:"1"); tool-loop
+  //    continuations of an already-started question always go through.
   const unlimited = isUnlimited(user.email, env);
-  if (!unlimited && user.token_balance <= 0) {
+  const isNewTurn = request.headers.get("x-new-turn") === "1";
+  const onFree = !unlimited && Number(user.free_questions || 0) > 0;
+  if (!unlimited && !onFree && isNewTurn && user.token_balance <= 0) {
     return json({ error: { message: "Out of tokens. Recharge to keep asking.", code: "no_tokens", balance: 0 } }, 402, cors);
   }
 
@@ -113,20 +117,23 @@ async function chat(request, env, ctx, cors) {
     return new Response(detail, { status: upstream.status, headers: { ...cors, "content-type": upstream.headers.get("content-type") || "application/json" } });
   }
 
-  // 4) Forward the stream to the browser. For metered accounts, tee it and debit
-  //    the real usage afterwards; unlimited (owner) accounts are never charged.
+  // 4) Forward the stream to the browser and account for it: unlimited → free;
+  //    free trial → consume ONE free question per new turn, no écu debit; otherwise
+  //    tee the stream and debit the real usage afterwards.
   let clientBody = upstream.body;
-  if (!unlimited) {
+  if (!unlimited && !onFree) {
     const [toClient, toMeter] = upstream.body.tee();
     clientBody = toClient;
     ctx.waitUntil(meterAndDebit(toMeter, env, user.id));
+  } else if (onFree && isNewTurn) {
+    ctx.waitUntil(env.DB.prepare("UPDATE users SET free_questions = MAX(0, free_questions - 1) WHERE id = ?").bind(user.id).run());
   }
 
   const headers = new Headers(cors);
   headers.set("content-type", upstream.headers.get("content-type") || "text/event-stream; charset=utf-8");
   headers.set("cache-control", "no-store");
   // Optimistic (pre-debit) balance; the client refreshes /account after the turn.
-  headers.set("x-tokens-remaining", unlimited ? "-1" : String(user.token_balance));
+  headers.set("x-tokens-remaining", (unlimited || onFree) ? "-1" : String(user.token_balance));
   return new Response(clientBody, { status: 200, headers });
 }
 
@@ -181,16 +188,17 @@ async function authSignup(request, env, cors) {
   if (existing) return json({ error: { message: "An account with this email already exists." } }, 409, cors);
 
   const { hash, salt } = await hashPassword(password);
-  const welcome = Number(env.WELCOME_TOKENS) || 10000;
+  const welcome = Number(env.WELCOME_TOKENS) || 0;                              // écus gift (default none)
+  const freeQ = env.FREE_QUESTIONS != null ? Number(env.FREE_QUESTIONS) : 3;    // free questions per email (lifetime)
   const id = crypto.randomUUID();
   await env.DB.batch([
-    env.DB.prepare("INSERT INTO users (id, email, pw_hash, pw_salt, token_balance, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-      .bind(id, lc, hash, salt, welcome, nowIso()),
+    env.DB.prepare("INSERT INTO users (id, email, pw_hash, pw_salt, token_balance, free_questions, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .bind(id, lc, hash, salt, welcome, freeQ, nowIso()),
     env.DB.prepare("INSERT INTO transactions (user_id, kind, amount, ref, created_at) VALUES (?, 'welcome', ?, 'signup', ?)")
       .bind(id, welcome, nowIso()),
   ]);
   const token = await newSession(env, id);
-  return json({ token, email: lc, balance: welcome, unlimited: isUnlimited(lc, env) }, 200, cors);
+  return json({ token, email: lc, balance: welcome, free_questions: freeQ, unlimited: isUnlimited(lc, env) }, 200, cors);
 }
 
 async function authLogin(request, env, cors) {
@@ -198,14 +206,14 @@ async function authLogin(request, env, cors) {
   const { email, password } = await readJson(request);
   if (!email || !password) return json({ error: { message: "Email and password required." } }, 400, cors);
 
-  const u = await env.DB.prepare("SELECT id, email, pw_hash, pw_salt, token_balance FROM users WHERE email = ?")
+  const u = await env.DB.prepare("SELECT id, email, pw_hash, pw_salt, token_balance, free_questions FROM users WHERE email = ?")
     .bind(String(email).toLowerCase()).first();
   // Always run a verify to reduce account-enumeration timing differences.
   const ok = u ? await verifyPassword(password, u.pw_hash, u.pw_salt) : await verifyPassword(password, "", "AAAAAAAAAAAAAAAAAAAAAA==");
   if (!u || !ok) return json({ error: { message: "Invalid email or password." } }, 401, cors);
 
   const token = await newSession(env, u.id);
-  return json({ token, email: u.email, balance: u.token_balance, unlimited: isUnlimited(u.email, env) }, 200, cors);
+  return json({ token, email: u.email, balance: u.token_balance, free_questions: Number(u.free_questions || 0), unlimited: isUnlimited(u.email, env) }, 200, cors);
 }
 
 async function authLogout(request, env, cors) {
@@ -217,7 +225,7 @@ async function authLogout(request, env, cors) {
 async function accountInfo(request, env, cors) {
   const user = await requireUser(request, env);
   if (!user) return json({ error: { message: "Not signed in", code: "auth_required" } }, 401, cors);
-  return json({ email: user.email, balance: user.token_balance, unlimited: isUnlimited(user.email, env) }, 200, cors);
+  return json({ email: user.email, balance: user.token_balance, free_questions: Number(user.free_questions || 0), unlimited: isUnlimited(user.email, env) }, 200, cors);
 }
 
 /* ───────────────────────────── billing (Stripe) ───────────────────────────── */
@@ -287,7 +295,7 @@ async function requireUser(request, env) {
   const token = bearer(request);
   if (!token || !env.DB) return null;
   const row = await env.DB.prepare(
-    `SELECT u.id, u.email, u.token_balance, s.expires_at
+    `SELECT u.id, u.email, u.token_balance, u.free_questions, s.expires_at
        FROM sessions s JOIN users u ON u.id = s.user_id
       WHERE s.token = ?`).bind(token).first();
   if (!row) return null;
@@ -362,7 +370,7 @@ function corsHeaders(env) {
   return {
     "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN || "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "content-type, authorization",
+    "Access-Control-Allow-Headers": "content-type, authorization, x-new-turn",
     "Access-Control-Expose-Headers": "x-tokens-remaining",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin",

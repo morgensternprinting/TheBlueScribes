@@ -846,7 +846,7 @@ async function streamOnce(apiMessages, onText, onThinking, isNewTurn){
   // Proxy mode authenticates the user with their account session (Bearer); the
   // Worker checks the token balance, hides the Anthropic key, and debits usage.
   const headers = useProxy()
-    ? { "content-type":"application/json", "authorization": "Bearer " + (localStorage.getItem("bs_session")||"") }
+    ? { "content-type":"application/json", "authorization": "Bearer " + (localStorage.getItem("bs_session")||""), "x-new-turn": isNewTurn ? "1" : "0" }
     : { "content-type":"application/json", "x-api-key": getKey(),
         "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" };
   const resp = await fetch(url, { method:"POST", headers, body: JSON.stringify(body) });

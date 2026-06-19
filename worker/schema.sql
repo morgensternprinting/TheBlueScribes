@@ -8,8 +8,11 @@ CREATE TABLE IF NOT EXISTS users (
   pw_hash       TEXT NOT NULL,           -- PBKDF2-SHA256, base64
   pw_salt       TEXT NOT NULL,           -- base64
   token_balance INTEGER NOT NULL DEFAULT 0,
+  free_questions INTEGER NOT NULL DEFAULT 3,  -- one-time free questions per email (lifetime)
   created_at    TEXT NOT NULL
 );
+-- Existing database created before free_questions existed? Run once:
+--   ALTER TABLE users ADD COLUMN free_questions INTEGER NOT NULL DEFAULT 3;
 
 CREATE TABLE IF NOT EXISTS sessions (
   token      TEXT PRIMARY KEY,           -- opaque random token (Bearer)
