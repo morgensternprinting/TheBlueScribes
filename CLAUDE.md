@@ -13,5 +13,9 @@
 ## Le projet en deux mots
 « The Blue Scribes » est un assistant qui répond aux questions de règles du jeu
 Warhammer: The Old World. C'est un site web. Les réponses sont fournies par une
-intelligence artificielle, et il y a un système de « tokens » (crédits) que les
-utilisateurs peuvent recharger en payant.
+intelligence artificielle, et il y a un système d'« écus » (la monnaie du site)
+que les utilisateurs peuvent recharger en payant.
+
+Note technique : à l'affichage on parle d'« écus » ; en interne le moteur compte
+encore en « tokens » (1 écu = 1000 tokens). Inutile d'expliquer cette mécanique
+interne à l'utilisateur.

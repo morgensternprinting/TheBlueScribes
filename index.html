@@ -916,15 +916,15 @@ function handleApiError(err, bubble){
   let msg;
   const s = err.status;
   if(useProxy() && s===401 && err.code==="auth_required"){
-    msg = LANG==="fr"? "Connecte-toi (💳 Tokens) pour interroger les Scribes, mortel." : "Sign in (💳 Tokens) to consult the Scribes, mortal.";
+    msg = LANG==="fr"? "Connecte-toi (💳 Écus) pour interroger les Scribes, mortel." : "Sign in (💳 Écus) to consult the Scribes, mortal.";
     if(window.BlueScribesAccount) window.BlueScribesAccount.openLogin();
   }
   else if(useProxy() && s===402 && err.code==="no_tokens"){
-    msg = LANG==="fr"? "Tes tokens sont épuisés. Recharge ton grimoire (💳 Tokens) pour continuer." : "Your tokens are spent. Recharge (💳 Tokens) to keep asking.";
+    msg = LANG==="fr"? "Tes écus sont épuisés. Recharge ta bourse (💳 Écus) pour continuer." : "Your écus are spent. Recharge (💳 Écus) to keep asking.";
     if(window.BlueScribesAccount) window.BlueScribesAccount.open();
   }
   else if(s===401) msg = useProxy()
-    ? (LANG==="fr"? "Session expirée. Reconnecte-toi via 💳 Tokens." : "Session expired. Sign in again via 💳 Tokens.")
+    ? (LANG==="fr"? "Session expirée. Reconnecte-toi via 💳 Écus." : "Session expired. Sign in again via 💳 Écus.")
     : (LANG==="fr"? "Clé API invalide. Vérifiez-la dans ⚙️ Réglages." : "Invalid API key. Check it under ⚙️ Settings.");
   else if(s===429 && err.code==="rate_limited_daily"){ const n=err.limit||3; updateQuota(0, n); msg = LANG==="fr"? `Tu as épuisé tes ${n} questions du jour, mortel. Reviens demain — Tzeentch est patient.` : `You have spent your ${n} questions for today, mortal. Return tomorrow — Tzeentch is patient.`; }
   else if(s===429) msg = LANG==="fr"? "Limite de débit atteinte (429). Réessaie dans un instant." : "Rate limited (429). Try again shortly.";

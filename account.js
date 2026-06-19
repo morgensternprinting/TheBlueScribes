@@ -26,26 +26,26 @@
 
   const FR = (document.documentElement.lang || "fr").toLowerCase().startsWith("fr");
   const T = FR ? {
-    title: "Mon compte", tokens: "Tokens", balance: "Solde",
+    title: "Mon compte", tokens: "Écus", balance: "Solde",
     login: "Se connecter", signup: "Créer un compte", logout: "Se déconnecter",
     email: "Adresse e-mail", password: "Mot de passe (8+ caractères)",
-    recharge: "Recharger des tokens", buy: "Acheter",
+    recharge: "Recharger des écus", buy: "Acheter",
     needLogin: "Connecte-toi pour interroger les Scribes.",
     toggleToSignup: "Pas de compte ? En créer un", toggleToLogin: "Déjà un compte ? Se connecter",
-    small: "Petit", medium: "Moyen", large: "Grand", tokensSuffix: "tokens",
-    welcome: "Compte créé ! Tokens de bienvenue crédités.", loggedIn: "Connecté",
+    small: "Petit", medium: "Moyen", large: "Grand", tokensSuffix: "écus",
+    welcome: "Compte créé ! Écus de bienvenue crédités.", loggedIn: "Connecté",
     working: "…", buyHint: "Paiement sécurisé par Stripe. Tu reviens ici après le paiement.",
     topupOk: "Paiement reçu — solde mis à jour dès la confirmation de Stripe.",
     closed: "Fermer",
   } : {
-    title: "My account", tokens: "Tokens", balance: "Balance",
+    title: "My account", tokens: "Écus", balance: "Balance",
     login: "Log in", signup: "Create account", logout: "Log out",
     email: "Email address", password: "Password (8+ characters)",
-    recharge: "Recharge tokens", buy: "Buy",
+    recharge: "Recharge écus", buy: "Buy",
     needLogin: "Sign in to ask the Scribes.",
     toggleToSignup: "No account? Create one", toggleToLogin: "Have an account? Log in",
-    small: "Small", medium: "Medium", large: "Large", tokensSuffix: "tokens",
-    welcome: "Account created! Welcome tokens credited.", loggedIn: "Signed in",
+    small: "Small", medium: "Medium", large: "Large", tokensSuffix: "écus",
+    welcome: "Account created! Welcome écus credited.", loggedIn: "Signed in",
     working: "…", buyHint: "Secure payment by Stripe. You'll return here afterwards.",
     topupOk: "Payment received — balance updates once Stripe confirms.",
     closed: "Close",
@@ -173,14 +173,16 @@
     for (const p of PACKS) {
       const el = document.createElement("button");
       el.className = "bs-pack"; el.type = "button";
-      el.innerHTML = `<b>${T[p.id]}</b><span>${fmt(p.tokens)} ${T.tokensSuffix}</span>`;
+      el.innerHTML = `<b>${T[p.id]}</b><span>${fmt(toEcus(p.tokens))} ${T.tokensSuffix}</span>`;
       el.addEventListener("click", () => buy(p.id));
       buyWrap.appendChild(el);
     }
   }
 
   function setMsg(text, kind) { msgEl.textContent = text || ""; msgEl.className = "bs-msg" + (kind ? " " + kind : ""); }
-  function renderBalance() { for (const el of balanceEls) if (el) el.textContent = fmt(state.balance); }
+  // 1 écu = 1000 tokens. Balance is stored in tokens internally; display in écus.
+  function toEcus(tokens) { return tokens == null ? null : Math.round(tokens / 1000); }
+  function renderBalance() { for (const el of balanceEls) if (el) el.textContent = fmt(toEcus(state.balance)); }
   function renderMode() {
     const account = state.loggedIn;
     formWrap.hidden = account; authBtns.hidden = !account;
