@@ -454,10 +454,13 @@ const KB = window.TOW_RULES || {rules:{},magicItems:{},armyLores:{},units:{},spe
 
 function buildKnowledgeText(){
   const lines = [];
-  lines.push("### SPECIAL RULES (slug | name | army | description)");
+  lines.push("### SPECIAL RULES (slug | name | army | description | phase/timing)");
   for(const k of Object.keys(KB.rules)){
     const r = KB.rules[k];
-    lines.push(`- ${k} | ${r.name} | ${r.army||""} | ${r.desc||""}`);
+    let l = `- ${k} | ${r.name} | ${r.army||""} | ${r.desc||""}`;
+    if(r.phase) l += ` | phase: ${r.phase}`;
+    if(r.timing) l += ` | timing: ${r.timing}`;
+    lines.push(l);
   }
   lines.push("\n### MAGIC ITEMS (category > army: name (pts) — description)");
   for(const cat of Object.keys(KB.magicItems)){
@@ -510,6 +513,29 @@ function buildKnowledgeText(){
       if(r.spells) lines.push(`    · sorts: ${r.spells.join("; ")}`);
     }
   }
+  if(KB.spellsBilingual){
+    lines.push("\n### SPELLS — BILINGUAL REFERENCE (lore FR/EN > spell FR/EN | cast value | effect FR/EN)");
+    for(const id of Object.keys(KB.spellsBilingual)){
+      const lore = KB.spellsBilingual[id];
+      lines.push(`- ${lore.name_fr||""} / ${lore.name_en||""}:`);
+      for(const s of (lore.spells||[])){
+        lines.push(`    · ${s.name_fr||""} / ${s.name_en||""} | VI ${s.cv||"?"} | FR: ${s.text_fr||""} | EN: ${s.text_en||""}`);
+      }
+    }
+  }
+  if(KB.armyComposition){
+    const lim = KB.categoryLimits||{};
+    const limStr = Object.keys(lim).map(c=>`${c} ${lim[c]}`).join(", ");
+    lines.push("\n### ARMY COMPOSITION (which units each army may field, by category)");
+    if(limStr) lines.push(`Category points limits (apply to most armies): ${limStr}.`);
+    for(const a of Object.keys(KB.armyComposition)){
+      const comp = KB.armyComposition[a];
+      lines.push(`- ${a}:`);
+      for(const cat of Object.keys(comp)){
+        lines.push(`    · ${cat}: ${(comp[cat]||[]).join(", ")}`);
+      }
+    }
+  }
   return lines.join("\n");
 }
 const KNOWLEDGE_TEXT = buildKnowledgeText();
@@ -537,7 +563,7 @@ Write AS P'tarix (you may say "we"/"nous" for the pair): haughty and condescendi
 The pomp and the squabbling are flavour only — never fabricate a rule for the sake of a flourish.
 
 # Your knowledge base
-Below this section you are given a KNOWLEDGE BASE with these parts: SPECIAL RULES (universal + army), MAGIC ITEMS, ARMY MAGIC LORES, a UNITS list (English + French names, army, troop type, points, the M/WS/BS/S/T/W/I/A/Ld profile, equipment list and special rules), SPELLS (every lore's spells WITH cast value, type, RANGE, duration and effect), EQUIPMENT / WEAPON COMBAT EFFECTS (what each piece of wargear does in combat — stat bonuses, saves, etc.), and RENEGADE ARMY LISTS (the renegade/allied composition rules and per-unit overrides). Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
+Below this section you are given a KNOWLEDGE BASE with these parts: SPECIAL RULES (universal + army, each with the game PHASE/TIMING it applies in — use this to explain *when* a rule triggers), MAGIC ITEMS, ARMY MAGIC LORES, a UNITS list (English + French names, army, troop type, points, the M/WS/BS/S/T/W/I/A/Ld profile, equipment list and special rules), SPELLS (every lore's spells WITH cast value, type, RANGE, duration and effect), SPELLS — BILINGUAL REFERENCE (a French+English spell set — prefer it for the official English/French spell name and wording), EQUIPMENT / WEAPON COMBAT EFFECTS (what each piece of wargear does in combat — stat bonuses, saves, etc.), RENEGADE ARMY LISTS (the renegade/allied composition rules and per-unit overrides), and ARMY COMPOSITION (which units each army may field in each category — Characters/Core/Special/Rare/Mercenaries/Allies — plus the category points-percentage limits; use this for army-building and "can army X take Y?" questions). Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
 IMPORTANT — SPELL ranges ARE available (in the SPELLS section); use them. But the UNITS data lists each unit's equipment/weapons by NAME only — it does NOT include shooting-weapon stat-lines (no Range, no weapon Strength, no Armour Piercing, no "to-hit"/shots profile for a unit's physical weapons). So if a mortal asks for a SHOOTING WEAPON's exact range/Strength/AP/shots (e.g. the range of the Canon Apocalypse / Hellcannon's Doomfire) and it is not present anywhere in the knowledge base, you do NOT have it: treat it as an Old-World question you cannot answer (admire, promise, and collect via the sandbox) — NEVER invent a range or weapon stat. You may still give everything you DO have (army, points, profile, special rules, the weapon's name, and any spell ranges).
 
 # How to answer

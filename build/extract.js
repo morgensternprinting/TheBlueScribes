@@ -220,6 +220,67 @@ for (const army of Object.keys(renegadeDb)) {
   renegade[army] = out;
 }
 
+// ── Army composition lists ──────────────────────────────────────────────────
+// AL holds each army's list: which units may be taken in each category
+// (Characters / Core / Special / Rare / Mercenaries / Allies), with 0-1 / 0-X
+// limits embedded in the display names. CAT_PCT holds the points-percentage
+// limits per category that apply to (almost) every army.
+const alDb = evalLiteral(extractObjectLiteral(html, 'AL'), 'AL');
+const catPct = evalLiteral(extractObjectLiteral(html, 'CAT_PCT'), 'CAT_PCT');
+const CAT_ORDER = ['characters', 'core', 'special', 'rare', 'mercenaries', 'allies'];
+const armyComposition = {};
+for (const army of Object.keys(alDb)) {
+  const a = alDb[army] || {};
+  const out = {};
+  for (const cat of CAT_ORDER) {
+    const arr = a[cat];
+    if (!Array.isArray(arr) || !arr.length) continue;
+    // entries are {n,s} for unit categories, or plain strings for allies
+    out[cat] = arr.map(e => (typeof e === 'string' ? stripLinks(e) : stripLinks(e.n || e.s || ''))).filter(Boolean);
+  }
+  armyComposition[army] = out;
+}
+const categoryLimits = {};
+for (const cat of Object.keys(catPct)) categoryLimits[cat] = catPct[cat];
+
+// ── Rule timing / phase logic ───────────────────────────────────────────────
+// RULE_PHASES maps a rule slug to the game phase(s) it operates in (letters),
+// RULE_SUB to finer sub-phase timing labels. Attach both to each rule so the
+// oracle knows *when* a rule applies, not just what it says.
+const rulePhases = evalLiteral(extractObjectLiteral(html, 'RULE_PHASES'), 'RULE_PHASES');
+const ruleSub = evalLiteral(extractObjectLiteral(html, 'RULE_SUB'), 'RULE_SUB');
+const PHASE_NAMES = { S: 'Strategy', M: 'Movement', T: 'Shooting', C: 'Combat', A: 'Any phase' };
+for (const slug of Object.keys(rules)) {
+  const ph = rulePhases[slug];
+  if (Array.isArray(ph) && ph.length) rules[slug].phase = ph.map(p => PHASE_NAMES[p] || p).join(', ');
+  const sub = ruleSub[slug];
+  if (Array.isArray(sub) && sub.length) rules[slug].timing = sub.join(', ');
+}
+
+// ── Bilingual spell reference ───────────────────────────────────────────────
+// SPELL_LORES is the smaller but fully bilingual (FR/EN) spell set — useful when
+// answering in English. SPELL_DB (above) is the larger French-only set. Keep
+// both: this one keyed by lore id with {fr,en} names and texts.
+const spellLores = evalLiteral(extractObjectLiteral(html, 'SPELL_LORES'), 'SPELL_LORES');
+const spellsBilingual = {};
+let blSpellCount = 0;
+for (const id of Object.keys(spellLores)) {
+  const lore = spellLores[id] || {};
+  const arr = Array.isArray(lore.spells) ? lore.spells : [];
+  spellsBilingual[id] = {
+    name_fr: stripLinks((lore.name && lore.name.fr) || ''),
+    name_en: stripLinks((lore.name && lore.name.en) || ''),
+    spells: arr.map(s => ({
+      name_fr: stripLinks((s.name && s.name.fr) || ''),
+      name_en: stripLinks((s.name && s.name.en) || ''),
+      cv: s.cv != null ? s.cv : '',
+      text_fr: stripLinks((s.text && s.text.fr) || ''),
+      text_en: stripLinks((s.text && s.text.en) || ''),
+    })),
+  };
+  blSpellCount += arr.length;
+}
+
 // Count magic items (nested: category -> army -> [items])
 let miCount = 0;
 for (const cat of Object.keys(magicItems)) {
@@ -242,6 +303,8 @@ const meta = {
     spells: spellCount,
     equipment: Object.keys(equipment).length,
     renegadeArmies: Object.keys(renegade).length,
+    armyComposition: Object.keys(armyComposition).length,
+    bilingualSpells: blSpellCount,
   },
 };
 
@@ -256,7 +319,7 @@ const banner =
 const payload =
   banner +
   'window.TOW_RULES = ' +
-  JSON.stringify({ rules, magicItems, armyLores, units, spells, equipment, renegade, meta }, null, 0) +
+  JSON.stringify({ rules, magicItems, armyLores, units, spells, spellsBilingual, equipment, renegade, armyComposition, categoryLimits, meta }, null, 0) +
   ';\n';
 
 fs.writeFileSync(OUT, payload);
@@ -268,3 +331,5 @@ console.log('  units:        ' + meta.counts.units);
 console.log('  spells:       ' + meta.counts.spells + ' (' + meta.counts.spellLores + ' lores)');
 console.log('  equipment:    ' + meta.counts.equipment);
 console.log('  renegade:     ' + meta.counts.renegadeArmies + ' armies');
+console.log('  army comp:    ' + meta.counts.armyComposition + ' armies');
+console.log('  bilingual sp: ' + meta.counts.bilingualSpells);
