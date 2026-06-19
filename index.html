@@ -306,6 +306,7 @@
 <script src="data/rules-data.js"></script>
 <script src="data/core-rules.js"></script>
 <script src="data/scribes-lines.js"></script>
+<script src="account.js" defer></script>
 <script>
 "use strict";
 /* ─────────────────────────────────────────────────────────────────────────
@@ -327,6 +328,8 @@ const MODEL = "claude-opus-4-8";
 // redeploy needed). Leave "" and unset in Settings for bring-your-own-key mode.
 // The URL itself is not a secret.
 const PROXY_URL = "https://blue-scribes-proxy.morgensternprinting.workers.dev"; // your Cloudflare Worker
+// Share the proxy base with account.js (the 💳 token/login widget).
+window.SCRIBES_PROXY_URL = PROXY_URL;
 
 const LS_KEY = "tow_blue_scribes_key";
 const LS_PW  = "tow_blue_scribes_pw";
@@ -834,16 +837,13 @@ async function streamOnce(apiMessages, onText, onThinking, isNewTurn){
   // Proxy mode → call your Worker (which adds the hidden key server-side).
   // BYO mode  → call the Anthropic API directly with the user's own key.
   const url = useProxy() ? proxyUrl() : "https://api.anthropic.com/v1/messages";
+  // Proxy mode authenticates the user with their account session (Bearer); the
+  // Worker checks the token balance, hides the Anthropic key, and debits usage.
   const headers = useProxy()
-    ? { "content-type":"application/json", "x-app-password": getPassword(), "x-new-turn": isNewTurn ? "1" : "0" }
+    ? { "content-type":"application/json", "authorization": "Bearer " + (localStorage.getItem("bs_session")||"") }
     : { "content-type":"application/json", "x-api-key": getKey(),
         "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" };
   const resp = await fetch(url, { method:"POST", headers, body: JSON.stringify(body) });
-  // The Worker reports the remaining daily quota on new-turn calls.
-  if(useProxy() && isNewTurn){
-    const rem = resp.headers.get("x-questions-remaining");
-    if(rem!==null) updateQuota(parseInt(rem,10), parseInt(resp.headers.get("x-questions-limit")||"0",10));
-  }
 
   if(!resp.ok || !resp.body){
     let detail="", code=null, limit=null;
@@ -915,8 +915,16 @@ async function streamOnce(apiMessages, onText, onThinking, isNewTurn){
 function handleApiError(err, bubble){
   let msg;
   const s = err.status;
-  if(s===401) msg = useProxy()
-    ? (LANG==="fr"? "Mot de passe d'accès invalide. Vérifie-le dans ⚙️ Réglages." : "Invalid access password. Check it under ⚙️ Settings.")
+  if(useProxy() && s===401 && err.code==="auth_required"){
+    msg = LANG==="fr"? "Connecte-toi (💳 Tokens) pour interroger les Scribes, mortel." : "Sign in (💳 Tokens) to consult the Scribes, mortal.";
+    if(window.BlueScribesAccount) window.BlueScribesAccount.openLogin();
+  }
+  else if(useProxy() && s===402 && err.code==="no_tokens"){
+    msg = LANG==="fr"? "Tes tokens sont épuisés. Recharge ton grimoire (💳 Tokens) pour continuer." : "Your tokens are spent. Recharge (💳 Tokens) to keep asking.";
+    if(window.BlueScribesAccount) window.BlueScribesAccount.open();
+  }
+  else if(s===401) msg = useProxy()
+    ? (LANG==="fr"? "Session expirée. Reconnecte-toi via 💳 Tokens." : "Session expired. Sign in again via 💳 Tokens.")
     : (LANG==="fr"? "Clé API invalide. Vérifiez-la dans ⚙️ Réglages." : "Invalid API key. Check it under ⚙️ Settings.");
   else if(s===429 && err.code==="rate_limited_daily"){ const n=err.limit||3; updateQuota(0, n); msg = LANG==="fr"? `Tu as épuisé tes ${n} questions du jour, mortel. Reviens demain — Tzeentch est patient.` : `You have spent your ${n} questions for today, mortal. Return tomorrow — Tzeentch is patient.`; }
   else if(s===429) msg = LANG==="fr"? "Limite de débit atteinte (429). Réessaie dans un instant." : "Rate limited (429). Try again shortly.";
@@ -931,7 +939,13 @@ async function send(text){
   if(busy) return;
   text = text.trim();
   if(!text) return;
-  if(!getCred()){ openSettings(); return; }
+  // Proxy mode requires an account session (the token wallet); BYO mode needs a key.
+  if(useProxy()){
+    if(!localStorage.getItem("bs_session")){
+      if(window.BlueScribesAccount) window.BlueScribesAccount.openLogin(); else openSettings();
+      return;
+    }
+  } else if(!getKey()){ openSettings(); return; }
   // remove welcome if present
   const w = chat.querySelector(".welcome"); if(w){ clearChat(); }
   const hint = chat.querySelector(".hint"); if(hint) hint.remove();
@@ -1021,6 +1035,8 @@ async function runTurnClean(){
   }finally{
     clearInterval(rotTimer);
     busy=false; sendBtn.disabled=false; updateSandboxBadge();
+    // Refresh the displayed token balance after the debit (proxy mode).
+    if(useProxy()) window.dispatchEvent(new Event("bs-refresh-balance"));
   }
 }
 

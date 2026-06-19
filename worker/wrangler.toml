@@ -3,21 +3,33 @@ main = "blue-scribes-proxy.js"
 compatibility_date = "2024-11-01"
 
 # Secrets are NOT stored here. Set them once after first deploy:
-#   wrangler secret put ANTHROPIC_API_KEY
-#   wrangler secret put APP_PASSWORD
+#   wrangler secret put ANTHROPIC_API_KEY      # your sk-ant-... key
+#   wrangler secret put STRIPE_SECRET_KEY      # sk_live_ / sk_test_...
+#   wrangler secret put STRIPE_WEBHOOK_SECRET  # whsec_... (from the webhook endpoint)
 
 [vars]
 # Lock this down to your site's origin (scheme + host only, no path/trailing slash).
 ALLOWED_ORIGIN = "https://morgensternprinting.github.io"
+SITE_URL = "https://morgensternprinting.github.io/TheBlueScribes"
 MODEL = "claude-opus-4-8"
 MAX_TOKENS = "8192"
-DAILY_LIMIT = "3"   # questions per IP per UTC day (needs the RATE_LIMIT KV binding)
 
-# Per-IP daily limit storage. Create the namespace once:
-#   wrangler kv namespace create RATE_LIMIT
-# then paste the printed id below and redeploy. (Dashboard equivalent: KV →
-# Create namespace, then Worker → Settings → Variables → KV Namespace Bindings →
-# bind variable name RATE_LIMIT to it.) Without this binding, no limiting happens.
-# [[kv_namespaces]]
-# binding = "RATE_LIMIT"
-# id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
+# Token wallet settings.
+WELCOME_TOKENS = "10000"       # credit granted on sign-up
+BILLING_GRANULARITY = "1000"   # debits are rounded up to this many tokens
+
+# Stripe Price IDs for the three token packs (create them in the Stripe dashboard).
+# Token amounts per pack are fixed in the Worker (PACK_TOKENS): small 100k,
+# medium 500k, large 1.2M. Make the Stripe prices match what you want to charge.
+STRIPE_PRICE_SMALL = "price_REPLACE_SMALL"
+STRIPE_PRICE_MEDIUM = "price_REPLACE_MEDIUM"
+STRIPE_PRICE_LARGE = "price_REPLACE_LARGE"
+
+# D1 database (accounts + token wallet + ledger). Create it once:
+#   wrangler d1 create blue-scribes-db
+# then paste the printed database_id below and apply the schema:
+#   wrangler d1 execute blue-scribes-db --remote --file=worker/schema.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "blue-scribes-db"
+database_id = "PASTE_YOUR_D1_DATABASE_ID_HERE"
