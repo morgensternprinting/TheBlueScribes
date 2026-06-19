@@ -36,6 +36,8 @@
     welcome: "Compte créé ! Écus de bienvenue crédités.", loggedIn: "Connecté",
     working: "…", buyHint: "Paiement sécurisé par Stripe. Tu reviens ici après le paiement.",
     topupOk: "Paiement reçu — solde mis à jour dès la confirmation de Stripe.",
+    fabTitle: "Refaire le plein d'écus · Soutenir le projet",
+    signInShort: "Connexion", topupShort: "Recharger",
     closed: "Fermer",
   } : {
     title: "My account", tokens: "Écus", balance: "Balance",
@@ -48,6 +50,8 @@
     welcome: "Account created! Welcome écus credited.", loggedIn: "Signed in",
     working: "…", buyHint: "Secure payment by Stripe. You'll return here afterwards.",
     topupOk: "Payment received — balance updates once Stripe confirms.",
+    fabTitle: "Top up écus · Support the project",
+    signInShort: "Sign in", topupShort: "Top up",
     closed: "Close",
   };
 
@@ -91,11 +95,11 @@
     const style = document.createElement("style");
     style.textContent = `
       .bs-fab{position:fixed;top:12px;right:12px;z-index:60;display:flex;align-items:center;gap:6px;
-        padding:8px 12px;border-radius:999px;border:1px solid var(--line,#3a4a6a);cursor:pointer;
-        background:var(--panel,#10182e);color:#e9f0ff;font:600 13px/1 system-ui,sans-serif;
-        box-shadow:0 2px 10px rgba(0,0,0,.3)}
-      .bs-fab:hover{border-color:var(--accent,#5b8cff)}
-      .bs-fab .bs-bal{opacity:.85;font-weight:700}
+        padding:8px 14px;border-radius:999px;border:1px solid #caa64a;cursor:pointer;
+        background:linear-gradient(180deg,#16213f,#101830);color:#f2e6c4;font:700 13px/1 system-ui,sans-serif;
+        box-shadow:0 2px 12px rgba(0,0,0,.35)}
+      .bs-fab:hover{border-color:#e8c878;box-shadow:0 0 14px rgba(232,200,120,.4)}
+      .bs-fab .bs-bal{font-weight:800;color:#fff}
       .bs-overlay{position:fixed;inset:0;z-index:70;background:rgba(4,8,20,.6);display:none;
         align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
       .bs-overlay.show{display:flex}
@@ -129,8 +133,8 @@
     document.head.appendChild(style);
 
     fab = document.createElement("button");
-    fab.className = "bs-fab"; fab.type = "button";
-    fab.innerHTML = `💳 <span>${T.tokens}</span> <span class="bs-bal">—</span>`;
+    fab.className = "bs-fab"; fab.type = "button"; fab.title = T.fabTitle;
+    fab.innerHTML = `🪙 <span class="bs-bal">—</span>`;
     fab.addEventListener("click", open);
     document.body.appendChild(fab);
 
@@ -196,7 +200,13 @@
     const big = root && root.querySelector("[data-bal]");
     if (big) big.textContent = state.unlimited ? "∞" : fmt(toEcus(state.balance));
     const fb = fab && fab.querySelector(".bs-bal");
-    if (fb) fb.textContent = state.unlimited ? "∞" : (state.freeLeft > 0 ? "🎁" + state.freeLeft : fmt(toEcus(state.balance)));
+    if (fb) {
+      fb.textContent = !token() ? T.signInShort
+        : state.unlimited ? "∞"
+        : state.freeLeft > 0 ? ("🎁" + state.freeLeft)
+        : (state.balance != null && state.balance > 0) ? fmt(toEcus(state.balance))
+        : T.topupShort;
+    }
     const fr = root && root.querySelector("[data-free]");
     if (fr) { if (!state.unlimited && state.freeLeft > 0) { fr.hidden = false; fr.textContent = freeText(state.freeLeft); } else fr.hidden = true; }
   }
@@ -265,6 +275,8 @@
   window.BlueScribesAccount = {
     getSessionToken: token,
     getBalance: () => state.balance,
+    getFree: () => state.freeLeft,
+    isUnlimited: () => state.unlimited,
     isLoggedIn: () => !!token(),
     refresh, open, openLogin,
     onChange: (fn) => { if (typeof fn === "function") { listeners.push(fn); fn(Object.assign({}, state)); } },

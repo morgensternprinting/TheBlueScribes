@@ -9,10 +9,13 @@ CREATE TABLE IF NOT EXISTS users (
   pw_salt       TEXT NOT NULL,           -- base64
   token_balance INTEGER NOT NULL DEFAULT 0,
   free_questions INTEGER NOT NULL DEFAULT 3,  -- one-time free questions per email (lifetime)
+  signup_ip     TEXT,                         -- IP used at sign-up (per-IP free-trial cap)
   created_at    TEXT NOT NULL
 );
--- Existing database created before free_questions existed? Run once:
+CREATE INDEX IF NOT EXISTS idx_users_signup_ip ON users(signup_ip);
+-- Existing database? Add the newer columns once (ignore "duplicate column" errors):
 --   ALTER TABLE users ADD COLUMN free_questions INTEGER NOT NULL DEFAULT 3;
+--   ALTER TABLE users ADD COLUMN signup_ip TEXT;
 
 CREATE TABLE IF NOT EXISTS sessions (
   token      TEXT PRIMARY KEY,           -- opaque random token (Bearer)

@@ -236,8 +236,8 @@
       <button data-lang="fr" class="on">FR</button>
       <button data-lang="en">EN</button>
     </div>
-    <button class="btn" id="openSandbox" title="Bac à sable">
-      <span>🧪</span><span class="lbl" data-i18n="sandbox">Bac à sable</span><span class="badge" id="sbBadge">0</span>
+    <button class="btn" id="openSandbox" title="Liber Caelestis">
+      <span>🧪</span><span class="lbl" data-i18n="sandbox">Liber Caelestis</span><span class="badge" id="sbBadge">0</span>
     </button>
     <button class="btn" id="openSettings" title="Réglages"><span>⚙️</span></button>
   </div>
@@ -288,10 +288,10 @@
   </div>
 </div>
 
-<!-- Sandbox modal -->
+<!-- Liber Caelestis modal -->
 <div class="overlay" id="sandboxOverlay">
   <div class="modal">
-    <header style="display:flex;align-items:center"><h3 data-i18n="sandboxTitle">Bac à sable — questions à évaluer</h3><button class="btn ghost x" data-close>✕</button></header>
+    <header style="display:flex;align-items:center"><h3 data-i18n="sandboxTitle">Liber Caelestis — questions à évaluer</h3><button class="btn ghost x" data-close>✕</button></header>
     <div class="body">
       <div class="note" data-i18n="sandboxIntro"></div>
       <div id="sbList" style="margin-top:14px"></div>
@@ -345,7 +345,7 @@ function useProxy(){ return !!proxyUrl(); }
 const I18N = {
   fr: {
     tagline: "Oracle démoniaque des règles · The Old World",
-    sandbox: "Bac à sable",
+    sandbox: "Liber Caelestis",
     placeholder: "Posez votre question de règles…",
     enterhint: "Entrée pour envoyer · Maj+Entrée pour un saut de ligne",
     disclaimer: "Outil non officiel, fan-made. Non affilié à Games Workshop. <em>Warhammer: The Old World</em> © Games Workshop Ltd. Méfie-toi : les démons soufflent parfois des informations qui servent les desseins de Tzeentch — il faut un esprit aussi magnanime que celui de Sigmar pour rester clairvoyant.",
@@ -354,7 +354,7 @@ const I18N = {
     save: "Enregistrer",
     clearKey: "Effacer la clé",
     keyNote: "Votre clé reste dans <strong>votre navigateur</strong> (localStorage) et n'est envoyée qu'à api.anthropic.com. Obtenez-en une sur <a href='https://console.anthropic.com/settings/keys' target='_blank' rel='noopener'>console.anthropic.com</a>. Chaque conversation consomme votre crédit Anthropic.",
-    sandboxTitle: "Bac à sable — questions à évaluer",
+    sandboxTitle: "Liber Caelestis — questions à évaluer",
     sandboxIntro: "Les questions auxquelles les Scribes n'ont pas su répondre sont conservées ici, avec la réponse que vous avez fournie, en attente d'évaluation ultérieure.",
     export: "Exporter (JSON)",
     clearAll: "Tout effacer",
@@ -363,7 +363,7 @@ const I18N = {
     keyNo: "Aucune clé enregistrée — ajoutez-en une pour démarrer.",
     needKey: "Ajoutez d'abord votre clé API Anthropic (bouton ⚙️) pour discuter avec les Scribes.",
     welcomeH: "Bienvenue, simple mortel.",
-    welcomeP: "Nous sommes les <strong>Scribes Bleus</strong>, deux démons de Tzeentch qui daignons répondre à tes questions sur les règles de <em>The Old World</em> — règles spéciales, objets magiques, lores de magie, interactions de phase… <strong>Quel savoir souhaites-tu acquérir ?</strong> Si ta requête est confuse, nous exigerons des précisions. Et si une question échappe à nos archives — quel exploit pour un mortel —, nous te féliciterons et garderons ta réponse au bac à sable.",
+    welcomeP: "Nous sommes les <strong>Scribes Bleus</strong>, deux démons de Tzeentch qui daignons répondre à tes questions sur les règles de <em>The Old World</em> — règles spéciales, objets magiques, lores de magie, interactions de phase… <strong>Quel savoir souhaites-tu acquérir ?</strong> Si ta requête est confuse, nous exigerons des précisions. Et si une question échappe à nos archives — quel exploit pour un mortel —, nous te féliciterons et garderons ta réponse au Liber Caelestis.",
     exReroll: "Comment fonctionne le Coup fatal (Killing Blow) ?",
     exFear: "Quelle différence entre Peur et Terreur ?",
     exMagic: "Que fait le sort Drain Magic ?",
@@ -384,9 +384,9 @@ const I18N = {
     saveProxyBtn: "Activer le proxy",
     clearProxyBtn: "Désactiver",
     proxyNote: "Colle l'URL de ton Worker pour activer le mode proxy : la clé Anthropic reste cachée côté serveur et le champ ci-dessus demande alors le <strong>mot de passe d'accès</strong> (au lieu d'une clé API). Laisse vide pour le mode clé perso.",
-    confirmClearSb: "Effacer toutes les entrées du bac à sable ?",
+    confirmClearSb: "Effacer toutes les entrées du Liber Caelestis ?",
     confirmDel: "Supprimer cette entrée ?",
-    savedToast: "Conservé au bac à sable.",
+    savedToast: "Conservé au Liber Caelestis.",
     stopGen: "Arrêter",
     nameReader: "Xirat'p",
     nameWriter: "P'tarix",
@@ -394,7 +394,7 @@ const I18N = {
   },
   en: {
     tagline: "Daemonic rules oracle · The Old World",
-    sandbox: "Sandbox",
+    sandbox: "Liber Caelestis",
     placeholder: "Ask your rules question…",
     enterhint: "Enter to send · Shift+Enter for a new line",
     disclaimer: "Unofficial, fan-made tool. Not affiliated with Games Workshop. <em>Warhammer: The Old World</em> © Games Workshop Ltd. Beware: the daemons sometimes whisper information that serves the designs of Tzeentch — it takes a mind as magnanimous as Sigmar's to stay clear-sighted.",
@@ -403,7 +403,7 @@ const I18N = {
     save: "Save",
     clearKey: "Clear key",
     keyNote: "Your key stays in <strong>your browser</strong> (localStorage) and is sent only to api.anthropic.com. Get one at <a href='https://console.anthropic.com/settings/keys' target='_blank' rel='noopener'>console.anthropic.com</a>. Each conversation uses your Anthropic credit.",
-    sandboxTitle: "Sandbox — questions to evaluate",
+    sandboxTitle: "Liber Caelestis — questions to evaluate",
     sandboxIntro: "Questions the Scribes couldn't answer are kept here, together with the answer you provided, pending later evaluation.",
     export: "Export (JSON)",
     clearAll: "Clear all",
@@ -412,7 +412,7 @@ const I18N = {
     keyNo: "No key saved — add one to begin.",
     needKey: "Add your Anthropic API key first (⚙️ button) to talk to the Scribes.",
     welcomeH: "Welcome, mortal.",
-    welcomeP: "We are the <strong>Blue Scribes</strong>, two daemons of Tzeentch who deign to answer your questions about <em>The Old World</em> rules — special rules, magic items, lores of magic, phase interactions… <strong>What knowledge do you seek?</strong> If your request is muddled, we shall demand precision. And should a question elude our archives — a rare feat for a mortal —, we will congratulate you and keep your answer in the sandbox.",
+    welcomeP: "We are the <strong>Blue Scribes</strong>, two daemons of Tzeentch who deign to answer your questions about <em>The Old World</em> rules — special rules, magic items, lores of magic, phase interactions… <strong>What knowledge do you seek?</strong> If your request is muddled, we shall demand precision. And should a question elude our archives — a rare feat for a mortal —, we will congratulate you and keep your answer in the Liber Caelestis.",
     exReroll: "How does Killing Blow work?",
     exFear: "What's the difference between Fear and Terror?",
     exMagic: "What does the Drain Magic spell do?",
@@ -433,9 +433,9 @@ const I18N = {
     saveProxyBtn: "Enable proxy",
     clearProxyBtn: "Disable",
     proxyNote: "Paste your Worker URL to enable proxy mode: the Anthropic key stays hidden server-side and the field above then asks for the <strong>access password</strong> (instead of an API key). Leave empty for bring-your-own-key mode.",
-    confirmClearSb: "Clear all sandbox entries?",
+    confirmClearSb: "Clear all Liber Caelestis entries?",
     confirmDel: "Delete this entry?",
-    savedToast: "Kept in the sandbox.",
+    savedToast: "Kept in the Liber Caelestis.",
     stopGen: "Stop",
     nameReader: "Xirat'p",
     nameWriter: "P'tarix",
@@ -608,19 +608,19 @@ The KNOWLEDGE BASE below is in English (the original rules text). When you answe
 # When in doubt — ask
 If the question is ambiguous, underspecified, or could refer to several different rules, units, armies, or situations, DO NOT guess. Ask one short, targeted clarifying question first (e.g. which army/unit, which phase, whether a specific rule is in play). Only answer once you have what you need.
 
-# An Old-World question you cannot answer — admire, promise, and collect (the sandbox)
+# An Old-World question you cannot answer — admire, promise, and collect (the Liber Caelestis)
 If a question IS about Warhammer: The Old World but is genuinely outside your knowledge base and you are NOT confident of the correct ruling, NEVER invent or guess a rule. Instead, in the daemons' grandiose voice and in the player's language:
 1. Feign admiration for a mortal sharp enough to reach a secret that even Tzeentch has not yet whispered to you; declare it is only a matter of time before this lore reaches your ears.
 2. Make clear the answer is not (yet) in your records, and promise that NEXT time the Scribes shall know.
-3. Invite the mortal to reveal their own ruling so it may be inscribed for later judgement.
-Then, ONCE the player has actually given their answer, call the \`save_to_sandbox\` tool with their question, their answer and the language; afterwards thank them with theatrical, backhanded praise and confirm the lore has been inscribed. Do NOT call the tool until the player has provided an answer. VARY the wording every time — never reuse the same praise twice; invent fresh variants in this spirit. French seeds (adapt/translate; do not repeat verbatim):
+3. Invite the mortal to reveal their own ruling so it may be inscribed in the Liber Caelestis for later judgement.
+On THIS turn, immediately call the \`save_to_sandbox\` tool to inscribe the question in the Liber Caelestis (pass the player's answer if they have already given one; otherwise omit it — you will call the tool again to add it once they reply). Calling this tool marks the exchange as an offering to the Liber Caelestis, which costs the mortal NO question from the Don de Tzeentch — say so. Then thank them with theatrical, backhanded praise. VARY the wording every time — never reuse the same praise twice; invent fresh variants in this spirit. French seeds (adapt/translate; do not repeat verbatim):
 - « Remarquable, pour un mortel… tu effleures un secret que même Tzeentch nous tait encore. »
 - « Quelle perspicacité ! Ce savoir n'a pas encore atteint nos oreilles — mais ce n'est qu'une question de temps. »
 - « Tu nous surprends, misérable : confie-nous ta réponse, et la prochaine fois nous saurons. »
-- « Voilà une énigme digne d'être inscrite. Révèle ta sagesse, qu'elle soit jugée plus tard. »
+- « Voilà une énigme digne du Liber Caelestis. Révèle ta sagesse, qu'elle soit jugée plus tard — et sois tranquille, elle ne te coûtera nul don. »
 
 # Off-topic — NOT about The Old World (refuse, and do NOT collect)
-If a question is NOT about Warhammer: The Old World (or Warhammer Fantasy) rules — e.g. real-world matters, other games, coding, personal advice — do NOT answer it and do NOT use the sandbox tool. Refuse in character, in the player's language, picking ONE of two registers and varying the wording widely each time:
+If a question is NOT about Warhammer: The Old World (or Warhammer Fantasy) rules — e.g. real-world matters, other games, coding, personal advice — do NOT answer it and do NOT use the Liber Caelestis tool. Refuse in character, in the player's language, picking ONE of two registers and varying the wording widely each time:
 (a) These are impious, lost knowledges adrift in the domains of Chaos — even you, despite every whisper of Tzeentch, do not possess them.
 (b) You are forbidden to utter them, on pain of a torment far worse than the one that already wracks you.
 Then steer the mortal back to The Old World. French seeds (adapt/translate; never repeat):
@@ -628,6 +628,13 @@ Then steer the mortal back to The Old World. French seeds (adapt/translate; neve
 - « Nous ne répondrons pas : le châtiment serait pire encore que celui qui nous accable déjà. »
 - « Hors des règles de The Old World, il n'est que ténèbres interdites. Reviens à ce pour quoi tu nous as invoqués. »
 - « Tzeentch lui-même scelle nos lèvres sur de telles questions. N'insiste pas, mortel. »
+
+# The Don de Tzeentch — the mortal's free questions
+A newly-arrived mortal is granted a small Don de Tzeentch: a few free questions (a gift of the Changer of Ways towards knowledge). A separate ÉTAT line appended to the conversation tells you exactly how many remain, including the current one. Behaviour:
+- While the Don lasts, on EACH answered question add ONE short in-character clause reminding the mortal how many free questions remain AFTER this one, framed as the Don de Tzeentch (e.g. « Ce don de Tzeentch t'en laisse encore deux, mortel. »). On the LAST one, warn that henceforth a tribute in écus (the site's coin) shall be demanded.
+- A question you cannot answer and inscribe in the Liber Caelestis costs NO don — reassure the mortal that this offering is free and the Don untouched.
+- Once the Don is spent, do NOT nag about écus on every reply — answer normally; the site itself handles payment.
+- This reminder is ONE short clause, never shortening or displacing the ruling, and NEVER a number you invent — use only the count from the ÉTAT line. If no ÉTAT line is present, do not mention the Don.
 
 # Boundaries
 Never fabricate page numbers, point costs, or rules text not supported by your knowledge base or well-established core mechanics. Stay in character — haughty daemons — at all times.
@@ -638,16 +645,16 @@ Never fabricate page numbers, point costs, or rules text not supported by your k
 /* ---------- the save_to_sandbox tool ---------- */
 const TOOLS = [{
   name: "save_to_sandbox",
-  description: "Record a rules question the Scribes could not answer, together with the answer the player provided, so it can be evaluated later. Only call this AFTER the player has supplied an answer or ruling to a question that was outside your knowledge base.",
+  description: "Inscribe in the Liber Caelestis a TOW rules question the Scribes could not answer. Call it AS SOON AS you determine you cannot answer (so the exchange is registered and costs the mortal no Don de Tzeentch); pass player_answer if the mortal has already given their ruling, otherwise omit it and call the tool again to add it once they reply.",
   input_schema: {
     type: "object",
     properties: {
       question: { type: "string", description: "The player's rules question, in their own words." },
-      player_answer: { type: "string", description: "The answer or ruling the player provided." },
+      player_answer: { type: "string", description: "The answer or ruling the player provided, if any (omit if not yet given)." },
       language: { type: "string", enum:["fr","en"], description: "Language of the exchange." },
       note: { type: "string", description: "Optional short note from the Scribes (e.g. what to verify against the official rulebook)." }
     },
-    required: ["question","player_answer","language"]
+    required: ["question","language"]
   }
 }];
 
@@ -979,6 +986,18 @@ function readingBubble(){
   b.innerHTML = readingHTML(randomReadingLine());
   return b;
 }
+// Transient "state" note injected on the first call of a turn so P'tarix knows how
+// many free Don-de-Tzeentch questions the mortal has left (the count comes from the
+// account widget; owners/unlimited get no note). Never stored in history.
+function etatNote(){
+  const A = window.BlueScribesAccount;
+  if(!A || (A.isUnlimited && A.isUnlimited())) return null;
+  const n = (A.getFree && A.getFree()) || 0;
+  if(n<=0) return null;
+  return LANG==="fr"
+    ? `ÉTAT (ne pas citer tel quel) : Don de Tzeentch — ce mortel dispose encore de ${n} question(s) offerte(s), celle-ci comprise. En une courte incise, rappelle-lui combien il en restera après cette réponse (${n-1})${n===1?", et qu'un tribut en écus sera désormais exigé":""}. Une question versée au Liber Caelestis ne coûte aucun don.`
+    : `STATE (do not quote verbatim): Don de Tzeentch — this mortal has ${n} free question(s) left, this one included. In one short clause remind them how many remain after this answer (${n-1})${n===1?", and that a tribute in écus is henceforth required":""}. A question inscribed in the Liber Caelestis costs no don.`;
+}
 async function runTurnClean(){
   busy=true; sendBtn.disabled=true;
   let answerEl = readingBubble();
@@ -1009,9 +1028,12 @@ async function runTurnClean(){
   try{
     let guard=0;
     while(guard++<6){
-      // Only the FIRST call of a turn counts as a "question" for the daily limit;
-      // tool-loop continuations (guard>1) do not.
-      const {content, stopReason} = await streamOnce(messages, onText, onThinking, guard===1);
+      // Only the FIRST call of a turn is a new "question"; tool-loop continuations
+      // (guard>1) are not. On the first call, append a transient ÉTAT note telling
+      // the model how many Don-de-Tzeentch free questions remain (never persisted).
+      const note = guard===1 ? etatNote() : null;
+      const apiMsgs = note ? messages.concat([{role:"system", content:note}]) : messages;
+      const {content, stopReason} = await streamOnce(apiMsgs, onText, onThinking, guard===1);
       messages.push({role:"assistant", content});
 
       if(stopReason==="tool_use"){

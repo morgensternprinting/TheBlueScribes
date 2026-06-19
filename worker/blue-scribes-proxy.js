@@ -32,6 +32,7 @@
  *   MAX_TOKENS       per-response cap (default 8192, hard max 16000)
  *   WELCOME_TOKENS   écu credit granted on sign-up (default 0 — the trial is free questions)
  *   FREE_QUESTIONS   free questions per email, lifetime (default 3)
+ *   MAX_FREE_PER_IP  max fresh accounts that may claim the free trial per IP (default 1)
  *   BILLING_GRANULARITY  round debits up to this many tokens (default 1000)
  *   UNLIMITED_EMAILS comma-separated emails that bypass the wallet (owner/staff)
  *   SITE_URL         used to build Stripe success/cancel URLs (default ALLOWED_ORIGIN)
@@ -117,31 +118,32 @@ async function chat(request, env, ctx, cors) {
     return new Response(detail, { status: upstream.status, headers: { ...cors, "content-type": upstream.headers.get("content-type") || "application/json" } });
   }
 
-  // 4) Forward the stream to the browser and account for it: unlimited → free;
-  //    free trial → consume ONE free question per new turn, no écu debit; otherwise
-  //    tee the stream and debit the real usage afterwards.
+  // 4) Forward to the browser and settle afterwards. Unlimited (owner) → free.
+  //    Otherwise tee the stream and let settleTurn decide: a turn that inscribes a
+  //    Liber Caelestis question (the save_to_sandbox tool) is FREE; a free-trial
+  //    turn consumes one Don de Tzeentch; any other turn debits the real usage.
   let clientBody = upstream.body;
-  if (!unlimited && !onFree) {
+  if (!unlimited) {
     const [toClient, toMeter] = upstream.body.tee();
     clientBody = toClient;
-    ctx.waitUntil(meterAndDebit(toMeter, env, user.id));
-  } else if (onFree && isNewTurn) {
-    ctx.waitUntil(env.DB.prepare("UPDATE users SET free_questions = MAX(0, free_questions - 1) WHERE id = ?").bind(user.id).run());
+    ctx.waitUntil(settleTurn(toMeter, env, user.id, isNewTurn, onFree));
   }
 
   const headers = new Headers(cors);
   headers.set("content-type", upstream.headers.get("content-type") || "text/event-stream; charset=utf-8");
   headers.set("cache-control", "no-store");
-  // Optimistic (pre-debit) balance; the client refreshes /account after the turn.
+  // Optimistic (pre-settle) balance; the client refreshes /account after the turn.
   headers.set("x-tokens-remaining", (unlimited || onFree) ? "-1" : String(user.token_balance));
   return new Response(clientBody, { status: 200, headers });
 }
 
-// Read the SSE copy, extract usage, debit input+output tokens (rounded up).
-async function meterAndDebit(stream, env, userId) {
+// Read the SSE copy to learn the token usage and whether the turn inscribed a
+// Liber Caelestis question, then settle: Liber Caelestis turn → free; free-trial
+// turn → consume one Don de Tzeentch; otherwise debit input+output (rounded up).
+async function settleTurn(stream, env, userId, isNewTurn, onFree) {
   const reader = stream.getReader();
   const dec = new TextDecoder();
-  let buf = "", inputTok = 0, outputTok = 0;
+  let buf = "", inputTok = 0, outputTok = 0, usedLiber = false;
   try {
     while (true) {
       const { value, done } = await reader.read();
@@ -157,22 +159,29 @@ async function meterAndDebit(stream, env, userId) {
             inputTok = j.message.usage.input_tokens || 0; // excludes cached prompt
           } else if (j.type === "message_delta" && j.usage && j.usage.output_tokens != null) {
             outputTok = j.usage.output_tokens; // cumulative final count
+          } else if (j.type === "content_block_start" && j.content_block && j.content_block.type === "tool_use" && j.content_block.name === "save_to_sandbox") {
+            usedLiber = true; // an offering to the Liber Caelestis — this turn is free
           }
         }
       }
     }
   } catch { /* best-effort metering */ }
 
-  const granularity = Number(env.BILLING_GRANULARITY) || 1000;
-  const billable = (inputTok || 0) + (outputTok || 0);
-  const cost = Math.max(granularity, Math.ceil(billable / granularity) * granularity);
   try {
+    if (usedLiber) return;                                  // Liber Caelestis → free of charge
+    if (onFree) {                                           // free-trial turn → spend one Don de Tzeentch
+      if (isNewTurn) await env.DB.prepare("UPDATE users SET free_questions = MAX(0, free_questions - 1) WHERE id = ?").bind(userId).run();
+      return;
+    }
+    const granularity = Number(env.BILLING_GRANULARITY) || 1000;
+    const billable = (inputTok || 0) + (outputTok || 0);
+    const cost = Math.max(granularity, Math.ceil(billable / granularity) * granularity);
     await env.DB.batch([
       env.DB.prepare("UPDATE users SET token_balance = MAX(0, token_balance - ?) WHERE id = ?").bind(cost, userId),
       env.DB.prepare("INSERT INTO transactions (user_id, kind, amount, ref, created_at) VALUES (?, 'debit', ?, ?, ?)")
         .bind(userId, cost, `in:${inputTok}/out:${outputTok}`, nowIso()),
     ]);
-  } catch { /* if the debit fails we simply don't charge this turn */ }
+  } catch { /* if settling fails we simply don't charge this turn */ }
 }
 
 /* ───────────────────────────── auth ───────────────────────────── */
@@ -189,11 +198,23 @@ async function authSignup(request, env, cors) {
 
   const { hash, salt } = await hashPassword(password);
   const welcome = Number(env.WELCOME_TOKENS) || 0;                              // écus gift (default none)
-  const freeQ = env.FREE_QUESTIONS != null ? Number(env.FREE_QUESTIONS) : 3;    // free questions per email (lifetime)
+  let freeQ = env.FREE_QUESTIONS != null ? Number(env.FREE_QUESTIONS) : 3;      // free questions per email (lifetime)
+
+  // Anti-abuse: cap how many fresh accounts may claim the free trial from one IP
+  // (prevents farming free questions with throwaway emails). Beyond the cap, the
+  // account is still created but gets 0 free questions. Note: people behind the
+  // same NAT/VPN/office share an IP, so keep MAX_FREE_PER_IP lenient.
+  const ip = (request.headers.get("CF-Connecting-IP") || "").trim();
+  const maxPerIp = env.MAX_FREE_PER_IP != null ? Number(env.MAX_FREE_PER_IP) : 1;
+  if (ip && maxPerIp > 0 && freeQ > 0) {
+    const row = await env.DB.prepare("SELECT COUNT(*) AS c FROM users WHERE signup_ip = ?").bind(ip).first();
+    if (row && Number(row.c) >= maxPerIp) freeQ = 0;
+  }
+
   const id = crypto.randomUUID();
   await env.DB.batch([
-    env.DB.prepare("INSERT INTO users (id, email, pw_hash, pw_salt, token_balance, free_questions, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      .bind(id, lc, hash, salt, welcome, freeQ, nowIso()),
+    env.DB.prepare("INSERT INTO users (id, email, pw_hash, pw_salt, token_balance, free_questions, signup_ip, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(id, lc, hash, salt, welcome, freeQ, ip || null, nowIso()),
     env.DB.prepare("INSERT INTO transactions (user_id, kind, amount, ref, created_at) VALUES (?, 'welcome', ?, 'signup', ?)")
       .bind(id, welcome, nowIso()),
   ]);
