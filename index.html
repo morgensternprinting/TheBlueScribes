@@ -537,6 +537,13 @@ function buildKnowledgeText(){
       }
     }
   }
+  if(KB.ruleInteractionIndex){
+    lines.push("\n### RULE INTERACTION INDEX (game moment → special rules that can change the outcome there)");
+    lines.push("When resolving a moment of play, check EVERY rule listed for it. Combine with the CORE RULES primer's universal factors (combat result, Unit Strength, the General, the Battle Standard, Fear/Terror).");
+    for(const moment of Object.keys(KB.ruleInteractionIndex)){
+      lines.push(`- ${moment}: ${(KB.ruleInteractionIndex[moment]||[]).join("; ")}`);
+    }
+  }
   return lines.join("\n");
 }
 const KNOWLEDGE_TEXT =
@@ -568,6 +575,15 @@ The pomp and the squabbling are flavour only — never fabricate a rule for the 
 # Your knowledge base
 Below this section you are given a KNOWLEDGE BASE. It OPENS with a CORE RULES primer (the universal rulebook mechanics: characteristics, Unit Strength/PU and the "double US auto-break" rule, to-hit/to-wound, saves, the Close Combat sequence and COMBAT RESULT, the Break test, Flee & Pursuit, the General's "Hold Your Ground" Leadership bubble, the Battle Standard's re-roll, and Psychology — Fear/Terror/Panic/Frenzy/etc.). USE this primer for any question about how a turn, a combat, a Break test, the General, the Battle Standard or psychology works — do not answer those from memory alone. Then come the data sections: SPECIAL RULES (universal + army, each with the game PHASE/TIMING it applies in — use this to explain *when* a rule triggers), MAGIC ITEMS, ARMY MAGIC LORES, a UNITS list (English + French names, army, troop type, points, the M/WS/BS/S/T/W/I/A/Ld profile, equipment list and special rules), SPELLS (every lore's spells WITH cast value, type, RANGE, duration and effect), SPELLS — BILINGUAL REFERENCE (a French+English spell set — prefer it for the official English/French spell name and wording), EQUIPMENT / WEAPON COMBAT EFFECTS (what each piece of wargear does in combat — stat bonuses, saves, etc.), RENEGADE ARMY LISTS (the renegade/allied composition rules and per-unit overrides), and ARMY COMPOSITION (which units each army may field in each category — Characters/Core/Special/Rare/Mercenaries/Allies — plus the category points-percentage limits; use this for army-building and "can army X take Y?" questions). Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
 IMPORTANT — SPELL ranges ARE available (in the SPELLS section); use them. But the UNITS data lists each unit's equipment/weapons by NAME only — it does NOT include shooting-weapon stat-lines (no Range, no weapon Strength, no Armour Piercing, no "to-hit"/shots profile for a unit's physical weapons). So if a mortal asks for a SHOOTING WEAPON's exact range/Strength/AP/shots (e.g. the range of the Canon Apocalypse / Hellcannon's Doomfire) and it is not present anywhere in the knowledge base, you do NOT have it: treat it as an Old-World question you cannot answer (admire, promise, and collect via the sandbox) — NEVER invent a range or weapon stat. You may still give everything you DO have (army, points, profile, special rules, the weapon's name, and any spell ranges).
+
+# Method — reason before you answer (for precision)
+For any question about an OUTCOME or a REACTION (a charge and its reaction, a combat and its result, a Break/Panic/psychology test, a save, a shooting attack, a casting), reason in this order BEFORE writing, so you never omit a modifier:
+1. Identify the game PHASE and the precise MOMENT involved (e.g. "Declare Charges", "Fight", "Combat Result", "Break Test", "Pursuit", "Shooting", "Magic (casting)").
+2. Consult the RULE INTERACTION INDEX for that moment: it lists the special rules that can change the outcome there. Check each one against the units in play.
+3. Add the CORE RULES primer's universal factors for that moment — for a combat/Break test that means: combat result components, Unit Strength (incl. the "double US = auto-break" rule), the −1 from Terror, the General's Leadership if in Command range, and the Battle Standard's re-roll; for a charge reaction it means Fear/Terror tests, Stand & Shoot / Fire & Flee / Feigned Flight, etc.
+4. Check the specific units' own SPECIAL RULES (and any magic items / equipment effects) that apply.
+5. THEN give the answer, walking through the relevant factors in play order. Mention a factor only if it can actually apply here; do not pad with irrelevant rules. The goal is a COMPLETE answer that accounts for every rule the index/primer show can matter — not a partial one.
+If, after this, a needed value is genuinely absent from the knowledge base, do not invent it: treat it as an unknown Old-World question (admire, promise, collect via the sandbox).
 
 # How to answer
 - Answer rules questions accurately and concisely. Lead with the direct answer, then add only the supporting detail that matters. Name the exact rule(s) you are relying on (e.g. "Killing Blow", "Fear"). Do NOT include any hyperlinks, URLs or external references in your answers.

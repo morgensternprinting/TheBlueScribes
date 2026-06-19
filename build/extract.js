@@ -281,6 +281,29 @@ for (const id of Object.keys(spellLores)) {
   blSpellCount += arr.length;
 }
 
+// ── Rule interaction index ──────────────────────────────────────────────────
+// Invert RULE_SUB (rule -> moments) into moment -> rules, so the oracle can ask
+// "at THIS point of play, which special rules can change the outcome?" and
+// enumerate every relevant one instead of forgetting modifiers. Ordered roughly
+// by the sequence of a game turn.
+const MOMENT_ORDER = [
+  'Deployment', 'Reserves / Deployment', 'Command', 'Compulsory Moves',
+  'Declare Charges', 'Charge Moves', 'Remaining Moves', 'Magic (casting)',
+  'Shooting', 'Fight', 'Combat Result', 'Break Test', 'Pursuit',
+  'Any phase', 'Any phase (saves)',
+];
+const ruleIndex = {};
+for (const slug of Object.keys(ruleSub)) {
+  const name = (rules[slug] && rules[slug].name) || slug;
+  for (const moment of ruleSub[slug]) {
+    (ruleIndex[moment] || (ruleIndex[moment] = [])).push(`${name} (${slug})`);
+  }
+}
+// stable, play-order keys
+const ruleInteractionIndex = {};
+for (const m of MOMENT_ORDER) if (ruleIndex[m]) ruleInteractionIndex[m] = ruleIndex[m].sort();
+for (const m of Object.keys(ruleIndex)) if (!ruleInteractionIndex[m]) ruleInteractionIndex[m] = ruleIndex[m].sort();
+
 // Count magic items (nested: category -> army -> [items])
 let miCount = 0;
 for (const cat of Object.keys(magicItems)) {
@@ -305,6 +328,7 @@ const meta = {
     renegadeArmies: Object.keys(renegade).length,
     armyComposition: Object.keys(armyComposition).length,
     bilingualSpells: blSpellCount,
+    ruleInteractionMoments: Object.keys(ruleInteractionIndex).length,
   },
 };
 
@@ -319,7 +343,7 @@ const banner =
 const payload =
   banner +
   'window.TOW_RULES = ' +
-  JSON.stringify({ rules, magicItems, armyLores, units, spells, spellsBilingual, equipment, renegade, armyComposition, categoryLimits, meta }, null, 0) +
+  JSON.stringify({ rules, magicItems, armyLores, units, spells, spellsBilingual, equipment, renegade, armyComposition, categoryLimits, ruleInteractionIndex, meta }, null, 0) +
   ';\n';
 
 fs.writeFileSync(OUT, payload);
@@ -333,3 +357,4 @@ console.log('  equipment:    ' + meta.counts.equipment);
 console.log('  renegade:     ' + meta.counts.renegadeArmies + ' armies');
 console.log('  army comp:    ' + meta.counts.armyComposition + ' armies');
 console.log('  bilingual sp: ' + meta.counts.bilingualSpells);
+console.log('  rule index:   ' + meta.counts.ruleInteractionMoments + ' moments');
