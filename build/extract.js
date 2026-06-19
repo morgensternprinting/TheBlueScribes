@@ -145,6 +145,81 @@ for (const id of Object.keys(builder)) {
   if (!ex.equipment && Array.isArray(o.equip)) ex.equipment = o.equip.map(e => e.name_en || e.name_fr || '').filter(Boolean).join(' | ');
 }
 
+// ── Spells ────────────────────────────────────────────────────────────────
+// SPELL_DB holds every spell of every lore in French, WITH cast value, type,
+// range, duration and effect — the richest spell source in the app.
+const spellDb = evalLiteral(extractObjectLiteral(html, 'SPELL_DB'), 'SPELL_DB');
+const spells = {};
+let spellCount = 0;
+for (const lore of Object.keys(spellDb)) {
+  const arr = Array.isArray(spellDb[lore]) ? spellDb[lore] : [];
+  spells[lore] = arr.map(s => ({
+    name: stripLinks(s.name || ''),
+    castValue: s.castValue || '',
+    type: stripLinks(s.type || ''),
+    range: s.range || '',
+    duration: stripLinks(s.duration || ''),
+    effect: stripLinks(s.effect || ''),
+  }));
+  spellCount += spells[lore].length;
+}
+
+// ── Equipment / weapon combat effects ───────────────────────────────────────
+// BONUS_DB maps an equipment slug to the combat-stat changes it grants (e.g.
+// great weapon → +2 Strength, strikes last). Flatten into a readable string.
+const bonusDb = evalLiteral(extractObjectLiteral(html, 'BONUS_DB'), 'BONUS_DB');
+const CTX = { C: 'au corps à corps', A: 'toujours', S: 'au tir' };
+function bonusStr(b) {
+  const parts = [];
+  if (Array.isArray(b.effects)) {
+    for (const e of b.effects) {
+      let p = `${e.val > 0 ? '+' : ''}${e.val} ${e.stat}`;
+      if (e.ctx && CTX[e.ctx]) p += ' ' + CTX[e.ctx];
+      if (e.cond === 'charge') p += ' (à la charge)';
+      parts.push(p);
+    }
+  }
+  if (b.save != null) parts.push(`sauvegarde d'armure ${b.save}+`);
+  if (b.saveBonus != null) parts.push(`sauvegarde d'armure ${b.saveBonus > 0 ? '+' : ''}${b.saveBonus}`);
+  if (b.parry != null) parts.push(`parade ${b.parry}+`);
+  if (b.wardSave != null) parts.push(`sauvegarde invulnérable ${b.wardSave}+`);
+  if (b.regen != null) parts.push(`régénération ${b.regen}+`);
+  if (b.note) parts.push(stripLinks(b.note));
+  return parts.join('; ');
+}
+const equipment = {};
+for (const slug of Object.keys(bonusDb)) {
+  const str = bonusStr(bonusDb[slug] || {});
+  if (str) equipment[slug] = str;
+}
+
+// ── Renegade army lists ─────────────────────────────────────────────────────
+// RENEGADE_DB describes the "Renegade" composition + per-unit overrides for a
+// handful of allied armies. Flatten into compact, readable text.
+const renegadeDb = evalLiteral(extractObjectLiteral(html, 'RENEGADE_DB'), 'RENEGADE_DB');
+function noteStr(note) {
+  if (Array.isArray(note)) return note.map(stripLinks).join('; ');
+  return stripLinks(note || '');
+}
+const renegade = {};
+for (const army of Object.keys(renegadeDb)) {
+  const r = renegadeDb[army] || {};
+  const out = { comp: stripLinks(r.comp || '') };
+  if (r.units && Object.keys(r.units).length) {
+    out.units = {};
+    for (const slug of Object.keys(r.units)) {
+      out.units[slug] = noteStr(r.units[slug].note) || '';
+    }
+  }
+  if (Array.isArray(r.rules) && r.rules.length) {
+    out.rules = r.rules.map(x => `${stripLinks(x.n || '')}: ${stripLinks(x.c || '')}`);
+  }
+  if (Array.isArray(r.spells) && r.spells.length) {
+    out.spells = r.spells.map(x => `${stripLinks(x.n || '')} (${stripLinks(x.c || '')})`);
+  }
+  renegade[army] = out;
+}
+
 // Count magic items (nested: category -> army -> [items])
 let miCount = 0;
 for (const cat of Object.keys(magicItems)) {
@@ -163,6 +238,10 @@ const meta = {
     magicItems: miCount,
     armyLores: Object.keys(armyLores).length,
     units: Object.keys(units).length,
+    spellLores: Object.keys(spells).length,
+    spells: spellCount,
+    equipment: Object.keys(equipment).length,
+    renegadeArmies: Object.keys(renegade).length,
   },
 };
 
@@ -177,7 +256,7 @@ const banner =
 const payload =
   banner +
   'window.TOW_RULES = ' +
-  JSON.stringify({ rules, magicItems, armyLores, units, meta }, null, 0) +
+  JSON.stringify({ rules, magicItems, armyLores, units, spells, equipment, renegade, meta }, null, 0) +
   ';\n';
 
 fs.writeFileSync(OUT, payload);
@@ -186,3 +265,6 @@ console.log('  rules:        ' + meta.counts.rules);
 console.log('  magic items:  ' + meta.counts.magicItems + ' (' + meta.counts.magicItemCategories + ' categories)');
 console.log('  army lores:   ' + meta.counts.armyLores);
 console.log('  units:        ' + meta.counts.units);
+console.log('  spells:       ' + meta.counts.spells + ' (' + meta.counts.spellLores + ' lores)');
+console.log('  equipment:    ' + meta.counts.equipment);
+console.log('  renegade:     ' + meta.counts.renegadeArmies + ' armies');

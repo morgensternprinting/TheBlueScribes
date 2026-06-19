@@ -450,7 +450,7 @@ const composer = $("#composer");
 const sendBtn = $("#send");
 
 /* ---------- knowledge base → compact system context ---------- */
-const KB = window.TOW_RULES || {rules:{},magicItems:{},armyLores:{},meta:{}};
+const KB = window.TOW_RULES || {rules:{},magicItems:{},armyLores:{},units:{},spells:{},equipment:{},renegade:{},meta:{}};
 
 function buildKnowledgeText(){
   const lines = [];
@@ -486,6 +486,30 @@ function buildKnowledgeText(){
       lines.push(l);
     }
   }
+  if(KB.spells){
+    lines.push("\n### SPELLS (lore > name | cast value | type | range | duration | effect)");
+    for(const lore of Object.keys(KB.spells)){
+      for(const s of (KB.spells[lore]||[])){
+        lines.push(`- [${lore}] ${s.name} | ${s.castValue||"?"} | ${s.type||""} | portée ${s.range||"?"} | ${s.duration||""} | ${s.effect||""}`);
+      }
+    }
+  }
+  if(KB.equipment){
+    lines.push("\n### EQUIPMENT / WEAPON COMBAT EFFECTS (slug | effect)");
+    for(const k of Object.keys(KB.equipment)){
+      lines.push(`- ${k} | ${KB.equipment[k]}`);
+    }
+  }
+  if(KB.renegade){
+    lines.push("\n### RENEGADE ARMY LISTS (allied/renegade composition + per-unit overrides)");
+    for(const a of Object.keys(KB.renegade)){
+      const r = KB.renegade[a];
+      lines.push(`- ${a}: ${r.comp||""}`);
+      if(r.units) for(const slug of Object.keys(r.units)){ if(r.units[slug]) lines.push(`    · ${slug} → ${r.units[slug]}`); }
+      if(r.rules) for(const rl of r.rules){ lines.push(`    · règle: ${rl}`); }
+      if(r.spells) lines.push(`    · sorts: ${r.spells.join("; ")}`);
+    }
+  }
   return lines.join("\n");
 }
 const KNOWLEDGE_TEXT = buildKnowledgeText();
@@ -513,8 +537,8 @@ Write AS P'tarix (you may say "we"/"nous" for the pair): haughty and condescendi
 The pomp and the squabbling are flavour only — never fabricate a rule for the sake of a flourish.
 
 # Your knowledge base
-Below this section you are given a KNOWLEDGE BASE: the game's universal and army special rules, magic items, the magic lores available to each army, and a UNITS list (English + French names, army, troop type, points, the M/WS/BS/S/T/W/I/A/Ld profile, equipment list and special rules). Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
-IMPORTANT — what the UNITS data does NOT contain: it lists each unit's equipment/weapons by NAME only. It does NOT include weapon stat-lines — no Range, no weapon Strength, no Armour Piercing, no "to-hit"/shots profile for shooting weapons. So if a mortal asks for a weapon's exact range, Strength, AP or shots (e.g. the range of the Canon Apocalypse / Hellcannon's Doomfire), and it is not present, you do NOT have it: treat it as an Old-World question you cannot answer (admire, promise, and collect via the sandbox) — NEVER invent a range or weapon stat. You may still give everything you DO have (army, points, profile, special rules, the weapon's name).
+Below this section you are given a KNOWLEDGE BASE with these parts: SPECIAL RULES (universal + army), MAGIC ITEMS, ARMY MAGIC LORES, a UNITS list (English + French names, army, troop type, points, the M/WS/BS/S/T/W/I/A/Ld profile, equipment list and special rules), SPELLS (every lore's spells WITH cast value, type, RANGE, duration and effect), EQUIPMENT / WEAPON COMBAT EFFECTS (what each piece of wargear does in combat — stat bonuses, saves, etc.), and RENEGADE ARMY LISTS (the renegade/allied composition rules and per-unit overrides). Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
+IMPORTANT — SPELL ranges ARE available (in the SPELLS section); use them. But the UNITS data lists each unit's equipment/weapons by NAME only — it does NOT include shooting-weapon stat-lines (no Range, no weapon Strength, no Armour Piercing, no "to-hit"/shots profile for a unit's physical weapons). So if a mortal asks for a SHOOTING WEAPON's exact range/Strength/AP/shots (e.g. the range of the Canon Apocalypse / Hellcannon's Doomfire) and it is not present anywhere in the knowledge base, you do NOT have it: treat it as an Old-World question you cannot answer (admire, promise, and collect via the sandbox) — NEVER invent a range or weapon stat. You may still give everything you DO have (army, points, profile, special rules, the weapon's name, and any spell ranges).
 
 # How to answer
 - Answer rules questions accurately and concisely. Lead with the direct answer, then add only the supporting detail that matters. Name the exact rule(s) you are relying on (e.g. "Killing Blow", "Fear"). Do NOT include any hyperlinks, URLs or external references in your answers.
