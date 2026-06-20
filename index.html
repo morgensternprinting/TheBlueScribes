@@ -547,6 +547,26 @@ function buildKnowledgeText(){
       lines.push(`- ${moment}: ${(KB.ruleInteractionIndex[moment]||[]).join("; ")}`);
     }
   }
+  if(KB.ruleInteractions){
+    lines.push("\n### RULE INTERACTIONS (slug — how this rule cancels, stacks with, or excepts others)");
+    lines.push("Authoritative interaction notes. Use them whenever two rules meet (e.g. Frenzy vs Fear, Flaming Attacks vs Regeneration, Killing Blow vs automatic wounds).");
+    for(const slug of Object.keys(KB.ruleInteractions)){
+      lines.push(`- ${slug}: ${KB.ruleInteractions[slug]}`);
+    }
+  }
+  if(KB.infamy){
+    lines.push("\n### ARMIES OF INFAMY (alternative army lists: army > list name | composition | roster by category | limits | requirements | special rules)");
+    for(const a of Object.keys(KB.infamy)){
+      lines.push(`- ${a}:`);
+      for(const l of (KB.infamy[a]||[])){
+        lines.push(`    · ${l.name}${l.comp?` — ${l.comp}`:""}`);
+        if(l.rules) lines.push(`        règles: ${l.rules}`);
+        for(const cat of Object.keys(l.roster||{})){ lines.push(`        ${cat}: ${l.roster[cat]}`); }
+        if(l.limits) lines.push(`        limites: ${l.limits}`);
+        if(l.requires) lines.push(`        requis: ${l.requires}`);
+      }
+    }
+  }
   return lines.join("\n");
 }
 const KNOWLEDGE_TEXT =
@@ -582,7 +602,7 @@ Write AS P'tarix (you may say "we"/"nous" for the pair): haughty and condescendi
 The pomp and the squabbling are flavour only — never fabricate a rule for the sake of a flourish.
 
 # Your knowledge base
-Below this section you are given a KNOWLEDGE BASE. It OPENS with a CORE RULES primer (the universal rulebook mechanics: characteristics, Unit Strength/PU and the "double US auto-break" rule, to-hit/to-wound, saves, the Close Combat sequence and COMBAT RESULT, the Break test, Flee & Pursuit, the General's "Hold Your Ground" Leadership bubble, the Battle Standard's re-roll, and Psychology — Fear/Terror/Panic/Frenzy/etc.). USE this primer for any question about how a turn, a combat, a Break test, the General, the Battle Standard or psychology works — do not answer those from memory alone. Then come the data sections: SPECIAL RULES (universal + army, each with the game PHASE/TIMING it applies in — use this to explain *when* a rule triggers), MAGIC ITEMS, ARMY MAGIC LORES, a UNITS list (English + French names, army, troop type, points, the M/WS/BS/S/T/W/I/A/Ld profile, equipment list and special rules), SPELLS (every lore's spells WITH cast value, type, RANGE, duration and effect), SPELLS — BILINGUAL REFERENCE (a French+English spell set — prefer it for the official English/French spell name and wording), EQUIPMENT / WEAPON COMBAT EFFECTS (what each piece of wargear does in combat — stat bonuses, saves, etc.), RENEGADE ARMY LISTS (the renegade/allied composition rules and per-unit overrides), and ARMY COMPOSITION (which units each army may field in each category — Characters/Core/Special/Rare/Mercenaries/Allies — plus the category points-percentage limits; use this for army-building and "can army X take Y?" questions). Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
+Below this section you are given a KNOWLEDGE BASE. It OPENS with a CORE RULES primer (the universal rulebook mechanics: characteristics, Unit Strength/PU and the "double US auto-break" rule, to-hit/to-wound, saves, the Close Combat sequence and COMBAT RESULT, the Break test, Flee & Pursuit, the General's "Hold Your Ground" Leadership bubble, the Battle Standard's re-roll, and Psychology — Fear/Terror/Panic/Frenzy/etc.). USE this primer for any question about how a turn, a combat, a Break test, the General, the Battle Standard or psychology works — do not answer those from memory alone. Then come the data sections: SPECIAL RULES (universal + army, each with the game PHASE/TIMING it applies in — use this to explain *when* a rule triggers), MAGIC ITEMS, ARMY MAGIC LORES, a UNITS list (English + French names, army, troop type, points, the M/WS/BS/S/T/W/I/A/Ld profile, equipment list and special rules), SPELLS (every lore's spells WITH cast value, type, RANGE, duration and effect), SPELLS — BILINGUAL REFERENCE (a French+English spell set — prefer it for the official English/French spell name and wording), EQUIPMENT / WEAPON COMBAT EFFECTS (what each piece of wargear does in combat — stat bonuses, saves, etc.), RENEGADE ARMY LISTS (the renegade/allied composition rules and per-unit overrides), ARMY COMPOSITION (which units each army may field in each category — Characters/Core/Special/Rare/Mercenaries/Allies — plus the category points-percentage limits; use this for army-building and "can army X take Y?" questions), RULE INTERACTIONS (authoritative notes on how specific rules cancel, stack with or except one another — consult these whenever two rules meet, e.g. Flaming Attacks vs Regeneration, Frenzy vs Fear, Killing Blow vs automatic wounds), and ARMIES OF INFAMY (alternative army lists with their own composition, roster, limits, requirements and special rules). Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
 IMPORTANT — SPELL ranges ARE available (in the SPELLS section); use them. But the UNITS data lists each unit's equipment/weapons by NAME only — it does NOT include shooting-weapon stat-lines (no Range, no weapon Strength, no Armour Piercing, no "to-hit"/shots profile for a unit's physical weapons). So if a mortal asks for a SHOOTING WEAPON's exact range/Strength/AP/shots (e.g. the range of the Canon Apocalypse / Hellcannon's Doomfire) and it is not present anywhere in the knowledge base, you do NOT have it: treat it as an Old-World question you cannot answer (admire, promise, and collect via the sandbox) — NEVER invent a range or weapon stat. You may still give everything you DO have (army, points, profile, special rules, the weapon's name, and any spell ranges).
 
 # Method — reason before you answer (for precision)

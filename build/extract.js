@@ -304,6 +304,45 @@ const ruleInteractionIndex = {};
 for (const m of MOMENT_ORDER) if (ruleIndex[m]) ruleInteractionIndex[m] = ruleIndex[m].sort();
 for (const m of Object.keys(ruleIndex)) if (!ruleInteractionIndex[m]) ruleInteractionIndex[m] = ruleIndex[m].sort();
 
+// ── Rule interactions ───────────────────────────────────────────────────────
+// RULE_INTERACTIONS maps a rule slug to a precise French note on how that rule
+// interacts with others (cancellations, stacking, exceptions). Attach to the
+// matching rule AND keep a standalone map.
+const ruleInteractionsDb = evalLiteral(extractObjectLiteral(html, 'RULE_INTERACTIONS'), 'RULE_INTERACTIONS');
+const ruleInteractions = {};
+for (const slug of Object.keys(ruleInteractionsDb)) {
+  const txt = stripLinks(ruleInteractionsDb[slug]);
+  if (txt) ruleInteractions[slug] = txt;
+}
+
+// ── Armies of Infamy ────────────────────────────────────────────────────────
+// INFAMY_DB holds the "Armies of Infamy" alternative army lists: per army a set
+// of sub-lists, each with composition text, special rules, a per-category roster,
+// unit limits and requirements. Flatten into readable text.
+const infamyDb = evalLiteral(extractObjectLiteral(html, 'INFAMY_DB'), 'INFAMY_DB');
+const infamy = {};
+let infamyLists = 0;
+for (const army of Object.keys(infamyDb)) {
+  const lists = Array.isArray(infamyDb[army] && infamyDb[army].lists) ? infamyDb[army].lists : [];
+  infamy[army] = lists.map(l => {
+    const roster = l.roster || {};
+    const rosterStr = {};
+    for (const cat of Object.keys(roster)) if (Array.isArray(roster[cat]) && roster[cat].length) rosterStr[cat] = roster[cat].join(', ');
+    const limits = l.limit && Object.keys(l.limit).length
+      ? Object.keys(l.limit).map(k => `${k}: ${l.limit[k]}`).join('; ') : '';
+    const reqs = Array.isArray(l.req) ? l.req.map(r => stripLinks(r.label || '')).filter(Boolean).join('; ') : '';
+    return {
+      name: stripLinks(l.name || l.key || ''),
+      comp: stripLinks(l.comp || ''),
+      rules: Array.isArray(l.ruleSlugs) ? l.ruleSlugs.join(', ') : '',
+      roster: rosterStr,
+      limits: stripLinks(limits),
+      requires: reqs,
+    };
+  });
+  infamyLists += infamy[army].length;
+}
+
 // Count magic items (nested: category -> army -> [items])
 let miCount = 0;
 for (const cat of Object.keys(magicItems)) {
@@ -329,6 +368,9 @@ const meta = {
     armyComposition: Object.keys(armyComposition).length,
     bilingualSpells: blSpellCount,
     ruleInteractionMoments: Object.keys(ruleInteractionIndex).length,
+    ruleInteractions: Object.keys(ruleInteractions).length,
+    infamyArmies: Object.keys(infamy).length,
+    infamyLists: infamyLists,
   },
 };
 
@@ -343,7 +385,7 @@ const banner =
 const payload =
   banner +
   'window.TOW_RULES = ' +
-  JSON.stringify({ rules, magicItems, armyLores, units, spells, spellsBilingual, equipment, renegade, armyComposition, categoryLimits, ruleInteractionIndex, meta }, null, 0) +
+  JSON.stringify({ rules, magicItems, armyLores, units, spells, spellsBilingual, equipment, renegade, armyComposition, categoryLimits, ruleInteractionIndex, ruleInteractions, infamy, meta }, null, 0) +
   ';\n';
 
 fs.writeFileSync(OUT, payload);
@@ -358,3 +400,5 @@ console.log('  renegade:     ' + meta.counts.renegadeArmies + ' armies');
 console.log('  army comp:    ' + meta.counts.armyComposition + ' armies');
 console.log('  bilingual sp: ' + meta.counts.bilingualSpells);
 console.log('  rule index:   ' + meta.counts.ruleInteractionMoments + ' moments');
+console.log('  interactions: ' + meta.counts.ruleInteractions + ' rules');
+console.log('  infamy:       ' + meta.counts.infamyArmies + ' armies, ' + meta.counts.infamyLists + ' lists');
