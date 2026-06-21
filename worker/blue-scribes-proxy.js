@@ -33,6 +33,8 @@
  *   WELCOME_TOKENS   écu credit granted on sign-up (default 0 — the trial is free questions)
  *   FREE_QUESTIONS   free questions per email, lifetime (default 3)
  *   MAX_FREE_PER_IP  max fresh accounts that may claim the free trial per IP (default 1)
+ *   BLOCK_DISPOSABLE refuse throwaway/temp email domains at sign-up (default on; "0" = off)
+ *   EXTRA_DISPOSABLE_DOMAINS  extra disposable domains to block, comma/space separated
  *   BILLING_GRANULARITY  round debits up to this many tokens (default 1000)
  *   UNLIMITED_EMAILS comma-separated emails that bypass the wallet (owner/staff)
  *   SITE_URL         used to build Stripe success/cancel URLs (default ALLOWED_ORIGIN)
@@ -191,6 +193,11 @@ async function authSignup(request, env, cors) {
   const { email, password } = await readJson(request);
   const err = validateCreds(email, password);
   if (err) return json({ error: { message: err } }, 400, cors);
+
+  // Refuse throwaway / temporary email addresses (deters free-question farming).
+  if (env.BLOCK_DISPOSABLE !== "0" && isDisposableEmail(email, env)) {
+    return json({ error: { message: "Merci d'utiliser une adresse e-mail permanente : les adresses jetables ou temporaires ne sont pas acceptées." } }, 400, cors);
+  }
 
   const lc = email.toLowerCase();
   const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(lc).first();
@@ -352,6 +359,41 @@ function validateCreds(email, password) {
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return "Enter a valid email address.";
   if (!password || String(password).length < 8) return "Password must be at least 8 characters.";
   return null;
+}
+
+// Known disposable / throwaway email domains (temp-mail services). Refusing these at
+// sign-up deters farming free questions with one-shot inboxes, without ever penalising
+// two real players who share an IP. This is the common-offenders list; add more without
+// redeploying via the env var EXTRA_DISPOSABLE_DOMAINS (comma/space separated), or turn
+// the whole check off with BLOCK_DISPOSABLE = "0".
+const DISPOSABLE_DOMAINS = new Set([
+  "mailinator.com","yopmail.com","yopmail.fr","yopmail.net","guerrillamail.com","guerrillamail.net",
+  "guerrillamail.org","guerrillamail.biz","guerrillamailblock.com","sharklasers.com","grr.la","spam4.me",
+  "10minutemail.com","10minutemail.net","20minutemail.com","tempmail.com","temp-mail.org","temp-mail.io",
+  "tempmail.dev","tempmailo.com","tempmail.plus","tmail.ws","tmpmail.org","tmpeml.com","tmpbox.net",
+  "throwawaymail.com","throwawaymail.net","trashmail.com","trashmail.de","trash-mail.com","wegwerfmail.de",
+  "wegwerfmail.net","getnada.com","nada.email","maildrop.cc","mailnesia.com","mintemail.com","mohmal.com",
+  "fakeinbox.com","fakemailgenerator.com","emailfake.com","emailondeck.com","dispostable.com","spamgourmet.com",
+  "mailcatch.com","mvrht.com","moakt.com","tempr.email","discard.email","mailsac.com","inboxkitten.com",
+  "burnermail.io","33mail.com","mytemp.email","cs.email","mailpoof.com","tempmailaddress.com","jetable.org",
+  "1secmail.com","1secmail.org","1secmail.net","easytrashmail.com","tempinbox.com","minuteinbox.com",
+  "muellmail.com","mailto.plus","fexbox.org","fexbox.ru","tafmail.com","vmani.com","rteet.com","dpptd.com",
+  "gufum.com","mailtemp.net","luxusmail.org","mailester.com","instaddr.win","tempemail.co","tempemails.net"
+]);
+
+function isDisposableEmail(email, env) {
+  const e = String(email || "").toLowerCase().trim();
+  const at = e.lastIndexOf("@");
+  if (at < 0) return false;
+  const domain = e.slice(at + 1).trim();
+  if (!domain) return false;
+  if (DISPOSABLE_DOMAINS.has(domain)) return true;
+  const extra = (env && env.EXTRA_DISPOSABLE_DOMAINS) || "";
+  if (extra) {
+    const set = extra.toLowerCase().split(/[,\s]+/).filter(Boolean);
+    if (set.includes(domain)) return true;
+  }
+  return false;
 }
 
 async function readJson(request) { try { return await request.json(); } catch { return {}; } }

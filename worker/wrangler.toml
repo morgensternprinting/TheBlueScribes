@@ -18,6 +18,12 @@ MAX_TOKENS = "8192"
 WELCOME_TOKENS = "10000"       # credit granted on sign-up
 BILLING_GRANULARITY = "1000"   # debits are rounded up to this many tokens
 
+# Anti-abuse: refuse throwaway/temporary email addresses at sign-up.
+# Set BLOCK_DISPOSABLE = "0" to turn it off. Add more domains to block (without
+# touching the code) in EXTRA_DISPOSABLE_DOMAINS, separated by commas.
+BLOCK_DISPOSABLE = "1"
+EXTRA_DISPOSABLE_DOMAINS = ""
+
 # Stripe Price IDs for the three token packs (create them in the Stripe dashboard).
 # Token amounts per pack are fixed in the Worker (PACK_TOKENS): small 100k,
 # medium 500k, large 1.2M. Make the Stripe prices match what you want to charge.
