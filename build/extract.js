@@ -92,6 +92,17 @@ for (const k of Object.keys(rules)) {
   if (r.name) r.name = stripLinks(r.name);
   if (r.desc) r.desc = stripLinks(r.desc);
 }
+// RULE_FR maps a rule slug to its French name. Merge it in so every rule carries
+// both its English name (`name`) and its French name (`name_fr`); the `desc` text
+// is already in French in RULES_DB. (Optional source — older TOWen1 lacks it.)
+const ruleFrLit = extractObjectLiteral(html, 'RULE_FR');
+const ruleFr = ruleFrLit ? evalLiteral(ruleFrLit, 'RULE_FR') : {};
+let ruleFrCount = 0;
+for (const slug of Object.keys(ruleFr)) {
+  const fr = stripLinks(ruleFr[slug]);
+  if (!fr) continue;
+  if (rules[slug]) { rules[slug].name_fr = fr; ruleFrCount++; }
+}
 for (const cat of Object.keys(magicItems)) {
   const byArmy = magicItems[cat] || {};
   for (const army of Object.keys(byArmy)) {
@@ -99,6 +110,7 @@ for (const cat of Object.keys(magicItems)) {
       if (it && typeof it === 'object') {
         if (it.n) it.n = stripLinks(it.n);
         if (it.d) it.d = stripLinks(it.d);
+        if (it.df) it.df = stripLinks(it.df); // French description (bilingual)
       }
     }
   }
@@ -357,6 +369,7 @@ const meta = {
   source: 'TOWen1/index.html',
   counts: {
     rules: Object.keys(rules).length,
+    ruleFrNames: ruleFrCount,
     magicItemCategories: Object.keys(magicItems).length,
     magicItems: miCount,
     armyLores: Object.keys(armyLores).length,
@@ -390,7 +403,7 @@ const payload =
 
 fs.writeFileSync(OUT, payload);
 console.log('Wrote ' + OUT);
-console.log('  rules:        ' + meta.counts.rules);
+console.log('  rules:        ' + meta.counts.rules + ' (' + meta.counts.ruleFrNames + ' with FR name)');
 console.log('  magic items:  ' + meta.counts.magicItems + ' (' + meta.counts.magicItemCategories + ' categories)');
 console.log('  army lores:   ' + meta.counts.armyLores);
 console.log('  units:        ' + meta.counts.units);
