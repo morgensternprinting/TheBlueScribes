@@ -275,6 +275,7 @@
   window.BlueScribesAccount = {
     getSessionToken: token,
     getBalance: () => state.balance,
+    getEmail: () => state.email,
     getFree: () => state.freeLeft,
     isUnlimited: () => state.unlimited,
     isLoggedIn: () => !!token(),

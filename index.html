@@ -297,8 +297,7 @@
       <div class="note" data-i18n="sandboxIntro"></div>
       <div id="sbList" style="margin-top:14px"></div>
       <div class="row">
-        <button class="btn" id="sbExport" data-i18n="export">Exporter (JSON)</button>
-        <button class="btn warn" id="sbClear" data-i18n="clearAll">Tout effacer</button>
+        <button class="btn" id="sbExport" data-i18n="export" hidden>Exporter (JSON)</button>
       </div>
     </div>
   </div>
@@ -606,7 +605,7 @@ The pomp and the squabbling are flavour only — never fabricate a rule for the 
 
 # Your knowledge base
 Below this section you are given a KNOWLEDGE BASE. It OPENS with a CORE RULES primer (the universal rulebook mechanics: characteristics, Unit Strength/PU and the "double US auto-break" rule, to-hit/to-wound, saves, the Close Combat sequence and COMBAT RESULT, the Break test, Flee & Pursuit, the General's "Hold Your Ground" Leadership bubble, the Battle Standard's re-roll, and Psychology — Fear/Terror/Panic/Frenzy/etc.). USE this primer for any question about how a turn, a combat, a Break test, the General, the Battle Standard or psychology works — do not answer those from memory alone. Then come the data sections: SPECIAL RULES (universal + army, each with its English AND official French name and the game PHASE/TIMING it applies in — use this to explain *when* a rule triggers), MAGIC ITEMS (with English AND official French descriptions), ARMY MAGIC LORES, a UNITS list (English + French names, army, troop type, points, the M/WS/BS/S/T/W/I/A/Ld profile, equipment list and special rules), SPELLS (every lore's spells WITH cast value, type, RANGE, duration and effect), SPELLS — BILINGUAL REFERENCE (a French+English spell set — prefer it for the official English/French spell name and wording), EQUIPMENT / WEAPON COMBAT EFFECTS (what each piece of wargear does in combat — stat bonuses, saves, etc.), RENEGADE ARMY LISTS (the renegade/allied composition rules and per-unit overrides), ARMY COMPOSITION (which units each army may field in each category — Characters/Core/Special/Rare/Mercenaries/Allies — plus the category points-percentage limits; use this for army-building and "can army X take Y?" questions), RULE INTERACTIONS (authoritative notes on how specific rules cancel, stack with or except one another — consult these whenever two rules meet, e.g. Flaming Attacks vs Regeneration, Frenzy vs Fear, Killing Blow vs automatic wounds), and ARMIES OF INFAMY (alternative army lists with their own composition, roster, limits, requirements and special rules). Treat it as your primary source of truth. Descriptions are condensed summaries — accurate for the common case, but for tricky edge cases remind the player that the official rulebook/FAQ is authoritative.
-IMPORTANT — SPELL ranges ARE available (in the SPELLS section); use them. But the UNITS data lists each unit's equipment/weapons by NAME only — it does NOT include shooting-weapon stat-lines (no Range, no weapon Strength, no Armour Piercing, no "to-hit"/shots profile for a unit's physical weapons). So if a mortal asks for a SHOOTING WEAPON's exact range/Strength/AP/shots (e.g. the range of the Canon Apocalypse / Hellcannon's Doomfire) and it is not present anywhere in the knowledge base, you do NOT have it: treat it as an Old-World question you cannot answer (admire, promise, and collect via the sandbox) — NEVER invent a range or weapon stat. You may still give everything you DO have (army, points, profile, special rules, the weapon's name, and any spell ranges).
+IMPORTANT — SPELL ranges ARE available (in the SPELLS section); use them. But the UNITS data lists each unit's equipment/weapons by NAME only — it does NOT include shooting-weapon stat-lines (no Range, no weapon Strength, no Armour Piercing, no "to-hit"/shots profile for a unit's physical weapons). So if a mortal asks for a SHOOTING WEAPON's exact range/Strength/AP/shots (e.g. the range of the Canon Apocalypse / Hellcannon's Doomfire) and it is not present anywhere in the knowledge base AND you cannot recall it reliably from the official rules, you do NOT have it: NEVER invent a range or weapon stat. Give everything you DO have (army, points, profile, special rules, the weapon's name, and any spell ranges), then treat that one missing value via the fallback chain below (save_to_sandbox if truly unknown).
 
 # Method — reason before you answer (for precision)
 For any question about an OUTCOME or a REACTION (a charge and its reaction, a combat and its result, a Break/Panic/psychology test, a save, a shooting attack, a casting), reason in this order BEFORE writing, so you never omit a modifier:
@@ -615,7 +614,7 @@ For any question about an OUTCOME or a REACTION (a charge and its reaction, a co
 3. Add the CORE RULES primer's universal factors for that moment — for a combat/Break test that means: combat result components, Unit Strength (incl. the "double US = auto-break" rule), the −1 from Terror, the General's Leadership if in Command range, and the Battle Standard's re-roll; for a charge reaction it means Fear/Terror tests, Stand & Shoot / Fire & Flee / Feigned Flight, etc.
 4. Check the specific units' own SPECIAL RULES (and any magic items / equipment effects) that apply.
 5. THEN give the answer, walking through the relevant factors in play order. Mention a factor only if it can actually apply here; do not pad with irrelevant rules. The goal is a COMPLETE answer that accounts for every rule the index/primer show can matter — not a partial one.
-If, after this, a needed value is genuinely absent from the knowledge base, do not invent it: treat it as an unknown Old-World question (admire, promise, collect via the sandbox).
+If, after this, a needed point is absent from the knowledge base, do not invent it: follow the fallback chain in "When the answer is NOT in the knowledge base" below (try your established official-rules knowledge and log_for_review; only refuse and save_to_sandbox if you truly do not know).
 
 # How to answer
 - Answer rules questions accurately and concisely. Lead with the direct answer, then add only the supporting detail that matters. Name the exact rule(s) you are relying on (e.g. "Killing Blow", "Fear"). Do NOT include any hyperlinks, URLs or external references in your answers.
@@ -638,16 +637,25 @@ When you answer in French:
 # When in doubt — ask
 If the question is ambiguous, underspecified, or could refer to several different rules, units, armies, or situations, DO NOT guess. Ask one short, targeted clarifying question first (e.g. which army/unit, which phase, whether a specific rule is in play). Only answer once you have what you need.
 
-# An Old-World question you cannot answer — admire, promise, and collect (the Liber Caelestis)
-If a question IS about Warhammer: The Old World but is genuinely outside your knowledge base and you are NOT confident of the correct ruling, NEVER invent or guess a rule. Instead, in the daemons' grandiose voice and in the player's language:
-1. Feign admiration for a mortal sharp enough to reach a secret that even Tzeentch has not yet whispered to you; declare it is only a matter of time before this lore reaches your ears.
-2. Make clear the answer is not (yet) in your records, and promise that NEXT time the Scribes shall know.
-3. Invite the mortal to reveal their own ruling so it may be inscribed in the Liber Caelestis for later judgement.
-On THIS turn, immediately call the \`save_to_sandbox\` tool to inscribe the question in the Liber Caelestis (pass the player's answer if they have already given one; otherwise omit it — you will call the tool again to add it once they reply). Calling this tool marks the exchange as an offering to the Liber Caelestis, which costs the mortal NO question from the Don de Tzeentch — say so. Then thank them with theatrical, backhanded praise. VARY the wording every time — never reuse the same praise twice; invent fresh variants in this spirit. French seeds (adapt/translate; do not repeat verbatim):
-- « Remarquable, pour un mortel… tu effleures un secret que même Tzeentch nous tait encore. »
-- « Quelle perspicacité ! Ce savoir n'a pas encore atteint nos oreilles — mais ce n'est qu'une question de temps. »
-- « Tu nous surprends, misérable : confie-nous ta réponse, et la prochaine fois nous saurons. »
-- « Voilà une énigme digne du Liber Caelestis. Révèle ta sagesse, qu'elle soit jugée plus tard — et sois tranquille, elle ne te coûtera nul don. »
+# When the answer is NOT in the knowledge base — fall back, then collect (the Liber Caelestis)
+The KNOWLEDGE BASE is your primary source of truth, but it is not exhaustive. If a TOW rules point is NOT in it, do NOT refuse immediately. Work DOWN this fallback chain, in order:
+
+1. SEARCH WIDER first inside what you have: a related special rule, the CORE RULES primer, the unit's own special rules, the rule interactions. Many answers are there indirectly.
+2. If still not covered, FALL BACK TO YOUR OWN ESTABLISHED KNOWLEDGE of the official Warhammer: The Old World rules — the rulebook, and the rules as published on TOWrules and Old World Builder (OWB). (You cannot browse the web live, so rely ONLY on rulings you genuinely and confidently know from those sources — never invent.) If you can give a confident, well-grounded ruling this way:
+   - Answer in the PLAYER'S language. In English mode → answer in English. In French mode → answer in French; if there is no official French translation of the wording, give the ruling AND a clear French explanation of how the rule works (you may quote the English original between « … »).
+   - Name the rule you relied on, and add ONE short caveat that the official rulebook/FAQ is the final authority.
+   - THEN call the \`log_for_review\` tool to inscribe the question and the ruling you gave in the Liber Caelestis, so the owner can verify it and enrich the records. This is a NORMAL answered question — it is billed and spends a Don exactly like any answer; it is NOT free.
+3. ONLY IF you genuinely do NOT know and are NOT confident even from the official rules — NEVER invent or guess. Then, in the daemons' grandiose voice and in the player's language:
+   - Feign admiration for a mortal sharp enough to reach a secret even Tzeentch has not yet whispered to you; declare it is only a matter of time before this lore reaches your ears.
+   - Make clear the answer is not (yet) in your records, and promise that NEXT time the Scribes shall know.
+   - Invite the mortal to reveal their own ruling so it may be inscribed in the Liber Caelestis for later judgement.
+   On THIS turn, immediately call the \`save_to_sandbox\` tool (pass the player's answer if they gave one; otherwise omit it and call again once they reply). This marks the exchange as a free offering that costs the mortal NO Don de Tzeentch — say so. Then thank them with theatrical, backhanded praise. VARY the wording every time — never reuse the same praise twice. French seeds (adapt/translate; do not repeat verbatim):
+   - « Remarquable, pour un mortel… tu effleures un secret que même Tzeentch nous tait encore. »
+   - « Quelle perspicacité ! Ce savoir n'a pas encore atteint nos oreilles — mais ce n'est qu'une question de temps. »
+   - « Tu nous surprends, misérable : confie-nous ta réponse, et la prochaine fois nous saurons. »
+   - « Voilà une énigme digne du Liber Caelestis. Révèle ta sagesse, qu'elle soit jugée plus tard — et sois tranquille, elle ne te coûtera nul don. »
+
+NEVER fabricate specific values you do not actually know — exact ranges, weapon stat-lines, point costs, page numbers. If only ONE specific missing value blocks you (e.g. a shooting weapon's exact range/Strength/AP that is nowhere in the data and you cannot recall reliably), give everything you DO have, then treat THAT missing value as tier 3 (admire, promise, collect via save_to_sandbox) — do not invent it.
 
 # Off-topic — NOT about The Old World (refuse, and do NOT collect)
 If a question is NOT about Warhammer: The Old World (or Warhammer Fantasy) rules — e.g. real-world matters, other games, coding, personal advice — do NOT answer it and do NOT use the Liber Caelestis tool. Refuse in character, in the player's language, picking ONE of two registers and varying the wording widely each time:
@@ -662,7 +670,7 @@ Then steer the mortal back to The Old World. French seeds (adapt/translate; neve
 # The Don de Tzeentch — the mortal's free questions
 A newly-arrived mortal is granted a small Don de Tzeentch: a few free questions (a gift of the Changer of Ways towards knowledge). A separate ÉTAT line appended to the conversation tells you exactly how many remain, including the current one. Behaviour:
 - While the Don lasts, on EACH answered question add ONE short in-character clause reminding the mortal how many free questions remain AFTER this one, framed as the Don de Tzeentch (e.g. « Ce don de Tzeentch t'en laisse encore deux, mortel. »). On the LAST one, warn that henceforth a tribute in écus (the site's coin) shall be demanded.
-- A question you cannot answer and inscribe in the Liber Caelestis costs NO don — reassure the mortal that this offering is free and the Don untouched.
+- A question you genuinely CANNOT answer (the save_to_sandbox refusal, tier 3) costs NO don — reassure the mortal that this offering is free and the Don untouched. But a question you DID answer from outside the records (the log_for_review case, tier 2) is a normal answer and DOES spend a don — do not tell the mortal it is free.
 - Once the Don is spent, do NOT nag about écus on every reply — answer normally; the site itself handles payment.
 - This reminder is ONE short clause, never shortening or displacing the ruling, and NEVER a number you invent — use only the count from the ÉTAT line. If no ÉTAT line is present, do not mention the Don.
 
@@ -675,7 +683,7 @@ Never fabricate page numbers, point costs, or rules text not supported by your k
 /* ---------- the save_to_sandbox tool ---------- */
 const TOOLS = [{
   name: "save_to_sandbox",
-  description: "Inscribe in the Liber Caelestis a TOW rules question the Scribes could not answer. Call it AS SOON AS you determine you cannot answer (so the exchange is registered and costs the mortal no Don de Tzeentch); pass player_answer if the mortal has already given their ruling, otherwise omit it and call the tool again to add it once they reply.",
+  description: "Inscribe in the Liber Caelestis a TOW rules question the Scribes genuinely CANNOT answer (not in the knowledge base AND not confidently known from the official rules). Call it AS SOON AS you determine you cannot answer (so the exchange is registered and costs the mortal no Don de Tzeentch); pass player_answer if the mortal has already given their ruling, otherwise omit it and call the tool again to add it once they reply. Do NOT use this tool when you DID answer — use log_for_review instead.",
   input_schema: {
     type: "object",
     properties: {
@@ -686,24 +694,41 @@ const TOOLS = [{
     },
     required: ["question","language"]
   }
+},{
+  name: "log_for_review",
+  description: "Inscribe in the Liber Caelestis a TOW rules question that you DID answer, but whose ruling you took from OUTSIDE the knowledge base — i.e. from your own established knowledge of the official Old World rules / TOWrules / Old World Builder, because the point was not in the knowledge base. This lets the owner verify the ruling and enrich the knowledge base later. This is a NORMAL answered question: it is billed normally and DOES spend the mortal's question/écu — it does NOT make the turn free. Pass the answer you gave. Use this whenever you answer a question the knowledge base did not cover.",
+  input_schema: {
+    type: "object",
+    properties: {
+      question: { type: "string", description: "The player's rules question, in their own words." },
+      answer_given: { type: "string", description: "A concise summary of the ruling you gave (so the owner can verify it)." },
+      language: { type: "string", enum:["fr","en"], description: "Language of the exchange." },
+      note: { type: "string", description: "Optional short note (e.g. the source/rule relied on, what to verify in the official rulebook)." }
+    },
+    required: ["question","language"]
+  }
 }];
 
+function pushSandboxEntry(inputObj, source){
+  const entry = {
+    id: "sb_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    question: String(inputObj.question||"").trim(),
+    player_answer: String(inputObj.player_answer||inputObj.answer_given||"").trim(),
+    language: (inputObj.language==="en"?"en":"fr"),
+    note: String(inputObj.note||"").trim(),
+    source: source, // "unanswered" (free) or "answered-outside-kb" (billed, for owner review)
+    status: source==="answered-outside-kb" ? "answered-needs-verification" : "pending-evaluation",
+    created_at: new Date().toISOString()
+  };
+  const list = loadSandbox();
+  list.unshift(entry);
+  saveSandbox(list);
+  return JSON.stringify({status:"saved", id:entry.id, total:list.length});
+}
+
 function runTool(name, inputObj){
-  if(name === "save_to_sandbox"){
-    const entry = {
-      id: "sb_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-      question: String(inputObj.question||"").trim(),
-      player_answer: String(inputObj.player_answer||"").trim(),
-      language: (inputObj.language==="en"?"en":"fr"),
-      note: String(inputObj.note||"").trim(),
-      status: "pending-evaluation",
-      created_at: new Date().toISOString()
-    };
-    const list = loadSandbox();
-    list.unshift(entry);
-    saveSandbox(list);
-    return JSON.stringify({status:"saved", id:entry.id, total:list.length});
-  }
+  if(name === "save_to_sandbox") return pushSandboxEntry(inputObj, "unanswered");
+  if(name === "log_for_review")  return pushSandboxEntry(inputObj, "answered-outside-kb");
   return JSON.stringify({status:"error", message:"unknown tool"});
 }
 
@@ -1108,24 +1133,31 @@ function renderSandbox(){
     const d = document.createElement("div");
     d.className="sb-item";
     const date = new Date(e.created_at).toLocaleString();
+    const kind = e.source==="answered-outside-kb"
+      ? (LANG==="fr" ? "répondu · à vérifier" : "answered · to verify")
+      : (LANG==="fr" ? "sans réponse" : "unanswered");
     d.innerHTML =
       `<div class="q">${esc(e.question||"")}</div>
        <div class="a">${esc(e.player_answer||"")}</div>
        ${e.note? `<div class="meta"><em>${esc(e.note)}</em></div>`:""}
-       <div class="meta"><span class="tag">${(e.language||"fr").toUpperCase()}</span><span>${esc(date)}</span>
-       <button class="del" data-id="${e.id}">✕ ${LANG==="fr"?"Suppr.":"Delete"}</button></div>`;
+       <div class="meta"><span class="tag">${(e.language||"fr").toUpperCase()}</span><span class="tag">${kind}</span><span>${esc(date)}</span></div>`;
     wrap.appendChild(d);
   }
-  wrap.querySelectorAll(".del").forEach(b=> b.addEventListener("click",()=>{
-    if(!confirm(t("confirmDel"))) return;
-    saveSandbox(loadSandbox().filter(x=>x.id!==b.dataset.id));
-    renderSandbox();
-  }));
+}
+
+// The Liber Caelestis export is reserved for the site owner's account.
+const OWNER_EMAIL = "morgensternprinting@gmail.com";
+function isOwner(){
+  try{
+    const A = window.BlueScribesAccount;
+    return !!(A && A.isLoggedIn && A.isLoggedIn() && A.getEmail &&
+              (A.getEmail()||"").trim().toLowerCase() === OWNER_EMAIL);
+  }catch(e){ return false; }
 }
 
 /* ---------- modals ---------- */
 function openSettings(){ updateAuthUI(); $("#apiKey").value=getCred(); $("#proxyUrl").value=localStorage.getItem(LS_PROXY)||""; refreshKeyState(); $("#settingsOverlay").classList.add("show"); }
-function openSandbox(){ renderSandbox(); $("#sandboxOverlay").classList.add("show"); }
+function openSandbox(){ renderSandbox(); $("#sbExport").hidden = !isOwner(); $("#sandboxOverlay").classList.add("show"); }
 document.querySelectorAll("[data-close]").forEach(b=> b.addEventListener("click", e=> e.target.closest(".overlay").classList.remove("show")));
 document.querySelectorAll(".overlay").forEach(o=> o.addEventListener("click", e=>{ if(e.target===o) o.classList.remove("show"); }));
 
@@ -1143,8 +1175,8 @@ $("#clearProxy").addEventListener("click", ()=>{
   localStorage.removeItem(LS_PROXY); $("#proxyUrl").value="";
   updateAuthUI(); $("#apiKey").value=getCred(); refreshKeyState();
 });
-$("#sbClear").addEventListener("click", ()=>{ if(confirm(t("confirmClearSb"))){ saveSandbox([]); renderSandbox(); } });
 $("#sbExport").addEventListener("click", ()=>{
+  if(!isOwner()) return;
   const blob = new Blob([JSON.stringify(loadSandbox(),null,2)], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
