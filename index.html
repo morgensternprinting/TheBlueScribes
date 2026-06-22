@@ -50,6 +50,7 @@
     background:linear-gradient(180deg,#0c1738,#0a1330);
     border-bottom:1px solid var(--line2);
     box-shadow:0 2px 24px rgba(0,0,0,.5);
+    position:relative; z-index:20; /* keep the ☰ dropdown above the chat (below modals at 30) */
   }
   .brand{display:flex; align-items:center; gap:11px; min-width:0; flex:1 1 auto; overflow:hidden}
   .sigil{
