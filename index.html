@@ -77,6 +77,11 @@
   .lang button{background:transparent;color:var(--muted);border:0;padding:6px 9px;font-size:17px;line-height:1;cursor:pointer;filter:grayscale(.7) opacity(.65);transition:filter .15s}
   .lang button:hover{filter:grayscale(.2) opacity(.9)}
   .lang button.on{background:linear-gradient(135deg,var(--accent),var(--indigo));filter:none}
+  /* Links to the companion web-apps (TOWen1, Augur): logo only, no background. */
+  .app-links{display:flex;gap:4px;align-items:center}
+  .app-link{display:inline-flex;align-items:center;justify-content:center;background:none;border:0;padding:3px;border-radius:10px;line-height:0}
+  .app-link img{height:38px;width:auto;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));opacity:.88;transition:transform .15s,opacity .15s,filter .15s}
+  .app-link:hover img{opacity:1;transform:translateY(-1px);filter:drop-shadow(0 0 10px rgba(232,200,120,.55))}
 
   main{flex:1;min-height:0;display:flex;flex-direction:column;max-width:900px;width:100%;margin:0 auto;padding:12px 14px 8px}
 
@@ -204,6 +209,8 @@
     .brand p{display:none}
     .sigil{width:56px;height:56px}
     #openSandbox .lbl{display:none}
+    .app-link img{height:32px}
+    .app-links{gap:2px}
     main{padding:8px 8px 6px}
     .frame{border-radius:14px}
     #chat{padding:15px 12px 6px}
@@ -215,6 +222,7 @@
     .lang button{padding:5px 7px;font-size:15px}
     .btn{padding:7px 8px}
     .hbtns{gap:6px}
+    .app-link img{height:28px}
     .footer{font-size:9px}
   }
   @media (prefers-reduced-motion:reduce){
@@ -233,6 +241,10 @@
   </div>
   <div class="spacer"></div>
   <div class="hbtns">
+    <div class="app-links">
+      <a class="app-link" href="https://morgensternprinting.github.io/TOWen1/" target="_blank" rel="noopener" title="TOW en 1 — toutes les règles" aria-label="Ouvrir TOW en 1"><img src="assets/towen1-logo.png" alt="TOW en 1"></a>
+      <a class="app-link" href="https://morgensternprinting.github.io/Augur/" target="_blank" rel="noopener" title="Augur — Omens of the Battlefield" aria-label="Ouvrir Augur"><img src="assets/augur-logo.png" alt="Augur"></a>
+    </div>
     <div class="lang" id="lang">
       <button data-lang="fr" class="on" title="Français" aria-label="Français">🇫🇷</button>
       <button data-lang="en" title="English" aria-label="English">🇬🇧</button>
