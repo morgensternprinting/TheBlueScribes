@@ -73,15 +73,27 @@
     background:linear-gradient(135deg,var(--gold),var(--gold2));color:#241800;border-radius:999px;
     font-family:var(--serif);font-size:11px;font-weight:700;padding:1px 7px;min-width:18px;text-align:center;
   }
-  .lang{display:flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
-  .lang button{background:transparent;color:var(--muted);border:0;padding:6px 9px;font-size:17px;line-height:1;cursor:pointer;filter:grayscale(.7) opacity(.65);transition:filter .15s}
-  .lang button:hover{filter:grayscale(.2) opacity(.9)}
-  .lang button.on{background:linear-gradient(135deg,var(--accent),var(--indigo));filter:none}
-  /* Links to the companion web-apps (TOWen1, Augur): logo only, no background. */
-  .app-links{display:flex;gap:4px;align-items:center}
-  .app-link{display:inline-flex;align-items:center;justify-content:center;background:none;border:0;padding:3px;border-radius:10px;line-height:0}
-  .app-link img{height:38px;width:auto;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));opacity:.88;transition:transform .15s,opacity .15s,filter .15s}
-  .app-link:hover img{opacity:1;transform:translateY(-1px);filter:drop-shadow(0 0 10px rgba(232,200,120,.55))}
+  /* Single-flag language toggle: shows the current language's flag, click to switch. */
+  .lang-toggle{background:var(--navy2);border:1px solid var(--line2);border-radius:10px;padding:6px 10px;font-size:18px;line-height:1;cursor:pointer;transition:.15s}
+  .lang-toggle:hover{border-color:var(--gold2);box-shadow:0 0 12px rgba(91,140,255,.3)}
+  /* Header dropdown menu (☰): companion apps, credits, recharge. */
+  .menu{position:relative}
+  .menu-btn span{font-size:17px;line-height:1}
+  .menu-pop{position:absolute;top:calc(100% + 8px);right:0;z-index:80;min-width:236px;
+    background:linear-gradient(180deg,var(--navy2),var(--navy));border:1px solid var(--line2);
+    border-radius:14px;padding:8px;box-shadow:var(--shadow),0 0 0 1px rgba(232,200,120,.18)}
+  .menu-pop[hidden]{display:none}
+  .menu-head{font-family:var(--rune);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:7px 10px 3px}
+  .menu-sep{height:1px;background:var(--line2);margin:7px 4px;opacity:.7}
+  .menu-item{display:flex;align-items:center;gap:11px;width:100%;box-sizing:border-box;background:none;border:0;border-radius:10px;
+    padding:8px 10px;color:var(--fg);font-family:var(--rune);font-size:13px;letter-spacing:.3px;text-align:left;cursor:pointer;text-decoration:none}
+  .menu-item:hover{background:#1a3170}
+  .menu-item img{height:30px;width:auto;display:block;flex:0 0 auto;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+  .menu-item .mi-ico{font-size:17px;width:30px;text-align:center;flex:0 0 auto}
+  .menu-item .mi-sub{display:block;font-size:11px;color:var(--muted);font-family:var(--serif);letter-spacing:0;margin-top:1px}
+  .menu-item .menu-credits{color:var(--gold)}
+  /* Credits now live in the menu, so hide account.js's floating balance button. */
+  .bs-fab{display:none !important}
 
   main{flex:1;min-height:0;display:flex;flex-direction:column;max-width:900px;width:100%;margin:0 auto;padding:12px 14px 8px}
 
@@ -209,8 +221,6 @@
     .brand p{display:none}
     .sigil{width:56px;height:56px}
     #openSandbox .lbl{display:none}
-    .app-link img{height:32px}
-    .app-links{gap:2px}
     main{padding:8px 8px 6px}
     .frame{border-radius:14px}
     #chat{padding:15px 12px 6px}
@@ -219,10 +229,9 @@
   @media (max-width:430px){
     .brand h1 img{max-height:34px}
     .sigil{width:46px;height:46px}
-    .lang button{padding:5px 7px;font-size:15px}
+    .lang-toggle{padding:5px 8px;font-size:15px}
     .btn{padding:7px 8px}
     .hbtns{gap:6px}
-    .app-link img{height:28px}
     .footer{font-size:9px}
   }
   @media (prefers-reduced-motion:reduce){
@@ -241,18 +250,30 @@
   </div>
   <div class="spacer"></div>
   <div class="hbtns">
-    <div class="app-links">
-      <a class="app-link" href="https://morgensternprinting.github.io/TOWen1/" target="_blank" rel="noopener" title="TOW en 1 — toutes les règles" aria-label="Ouvrir TOW en 1"><img src="assets/towen1-logo.png" alt="TOW en 1"></a>
-      <a class="app-link" href="https://morgensternprinting.github.io/Augur/" target="_blank" rel="noopener" title="Augur — Omens of the Battlefield" aria-label="Ouvrir Augur"><img src="assets/augur-logo.png" alt="Augur"></a>
-    </div>
-    <div class="lang" id="lang">
-      <button data-lang="fr" class="on" title="Français" aria-label="Français">🇫🇷</button>
-      <button data-lang="en" title="English" aria-label="English">🇬🇧</button>
-    </div>
+    <button class="lang-toggle" id="langToggle" type="button"></button>
     <button class="btn" id="openSandbox" title="Liber Caelestis">
       <span>🧪</span><span class="lbl" data-i18n="sandbox">Liber Caelestis</span><span class="badge" id="sbBadge">0</span>
     </button>
     <button class="btn" id="openSettings" title="Réglages"><span>⚙️</span></button>
+    <div class="menu" id="appMenu">
+      <button class="btn menu-btn" id="menuBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Menu" aria-label="Menu"><span>☰</span></button>
+      <div class="menu-pop" id="menuPop" hidden role="menu">
+        <div class="menu-head" data-i18n="menuApps">Applications</div>
+        <a class="menu-item" role="menuitem" href="https://morgensternprinting.github.io/TOWen1/" target="_blank" rel="noopener">
+          <img src="assets/towen1-logo.png" alt=""><span>TOW en 1<span class="mi-sub" data-i18n="menuTowSub">Toutes les règles en 1</span></span>
+        </a>
+        <a class="menu-item" role="menuitem" href="https://morgensternprinting.github.io/Augur/" target="_blank" rel="noopener">
+          <img src="assets/augur-logo.png" alt=""><span>Augur<span class="mi-sub" data-i18n="menuAugurSub">Présages du champ de bataille</span></span>
+        </a>
+        <div class="menu-sep"></div>
+        <button class="menu-item" id="menuCreditsBtn" type="button" role="menuitem">
+          <span class="mi-ico">💳</span><span><span data-i18n="menuCredits">Mes écus</span><span class="mi-sub menu-credits" id="menuCreditVal">—</span></span>
+        </button>
+        <button class="menu-item" id="menuRechargeBtn" type="button" role="menuitem">
+          <span class="mi-ico">🪙</span><span data-i18n="menuRecharge">Refaire le plein d'écus</span>
+        </button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -358,6 +379,8 @@ const I18N = {
   fr: {
     tagline: "Oracle démoniaque des règles · The Old World",
     sandbox: "Liber Caelestis",
+    menuApps: "Applications", menuTowSub: "Toutes les règles en 1", menuAugurSub: "Présages du champ de bataille",
+    menuCredits: "Mes écus", menuRecharge: "Refaire le plein d'écus",
     placeholder: "Posez votre question de règles…",
     enterhint: "Entrée pour envoyer · Maj+Entrée pour un saut de ligne",
     disclaimer: "Outil non officiel, fan-made. Non affilié à Games Workshop. <em>Warhammer: The Old World</em> © Games Workshop Ltd. Méfie-toi : les démons soufflent parfois des informations qui servent les desseins de Tzeentch — il faut un esprit aussi magnanime que celui de Sigmar pour rester clairvoyant.",
@@ -407,6 +430,8 @@ const I18N = {
   en: {
     tagline: "Daemonic rules oracle · The Old World",
     sandbox: "Liber Caelestis",
+    menuApps: "Apps", menuTowSub: "All the rules in one", menuAugurSub: "Omens of the battlefield",
+    menuCredits: "My écus", menuRecharge: "Top up your écus",
     placeholder: "Ask your rules question…",
     enterhint: "Enter to send · Shift+Enter for a new line",
     disclaimer: "Unofficial, fan-made tool. Not affiliated with Games Workshop. <em>Warhammer: The Old World</em> © Games Workshop Ltd. Beware: the daemons sometimes whisper information that serves the designs of Tzeentch — it takes a mind as magnanimous as Sigmar's to stay clear-sighted.",
@@ -1197,21 +1222,57 @@ $("#sbExport").addEventListener("click", ()=>{
   URL.revokeObjectURL(a.href);
 });
 
-/* ---------- language ---------- */
+/* ---------- language (single-flag toggle) ---------- */
+const langToggle = $("#langToggle");
+function renderLangToggle(){
+  // Show the CURRENT language's flag; clicking switches to the other one.
+  langToggle.textContent = (LANG==="fr") ? "🇫🇷" : "🇬🇧";
+  langToggle.title = (LANG==="fr") ? "Français — cliquer pour passer en anglais"
+                                   : "English — click to switch to French";
+  langToggle.setAttribute("aria-label", langToggle.title);
+}
+langToggle.addEventListener("click", ()=>{
+  LANG = (LANG==="fr") ? "en" : "fr";
+  localStorage.setItem(LS_LANG, LANG);
+  applyLang();
+});
+
 function applyLang(){
   document.documentElement.lang = LANG;
-  $("#lang").querySelectorAll("button").forEach(b=> b.classList.toggle("on", b.dataset.lang===LANG));
+  renderLangToggle();
   document.querySelectorAll("[data-i18n]").forEach(el=> el.innerHTML = t(el.getAttribute("data-i18n")));
   document.querySelectorAll("[data-i18n-ph]").forEach(el=> el.placeholder = t(el.getAttribute("data-i18n-ph")));
   updateAuthUI();
   refreshKeyState();
   renderQuota();
+  renderMenuCredits();
   // refresh welcome if shown
   if(chat.querySelector(".welcome")) showWelcome();
 }
-$("#lang").querySelectorAll("button").forEach(b=> b.addEventListener("click",()=>{
-  LANG=b.dataset.lang; localStorage.setItem(LS_LANG,LANG); applyLang();
-}));
+
+/* ---------- header dropdown menu (☰): companion apps · credits · recharge ---------- */
+const menuPop = $("#menuPop"), menuBtn = $("#menuBtn"), appMenu = $("#appMenu");
+function menuOpen(v){ menuPop.hidden = !v; menuBtn.setAttribute("aria-expanded", v ? "true" : "false"); }
+menuBtn.addEventListener("click", (e)=>{ e.stopPropagation(); menuOpen(menuPop.hidden); });
+document.addEventListener("click", (e)=>{ if(!appMenu.contains(e.target)) menuOpen(false); });
+document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") menuOpen(false); });
+
+function acct(){ return window.BlueScribesAccount; }
+function renderMenuCredits(){
+  const el = $("#menuCreditVal"); if(!el) return;
+  const A = acct();
+  if(!(A && A.isLoggedIn && A.isLoggedIn())){ el.textContent = (LANG==="fr") ? "Se connecter" : "Sign in"; return; }
+  if(A.isUnlimited && A.isUnlimited()){ el.textContent = "∞"; return; }
+  const free = A.getFree ? Number(A.getFree()||0) : 0;
+  if(free>0){ el.textContent = "🎁 " + free + ((LANG==="fr") ? (" question"+(free>1?"s":"")+" offerte"+(free>1?"s":"")) : (" free question"+(free>1?"s":""))); return; }
+  const bal = A.getBalance ? A.getBalance() : null;
+  const ecus = (bal==null) ? null : Math.round(bal/1000);
+  el.textContent = (ecus==null ? "—" : ecus.toLocaleString((LANG==="fr")?"fr-FR":"en-US")) + " écus";
+}
+$("#menuCreditsBtn").addEventListener("click", ()=>{ menuOpen(false); const A=acct(); if(A){ (A.isLoggedIn && A.isLoggedIn()) ? A.open() : A.openLogin(); } });
+$("#menuRechargeBtn").addEventListener("click", ()=>{ menuOpen(false); const A=acct(); if(A) A.open(); });
+// Keep the credit figure live as the account state changes (account.js boots after this script).
+document.addEventListener("DOMContentLoaded", ()=>{ const A = acct(); if(A && A.onChange) A.onChange(renderMenuCredits); else renderMenuCredits(); });
 
 /* ---------- composer ---------- */
 function autoGrow(){ input.style.height="auto"; input.style.height=Math.min(input.scrollHeight,160)+"px"; }
