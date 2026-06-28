@@ -47,6 +47,20 @@ function extractObjectLiteral(source, varName) {
   let prev = '';
   for (let i = start; i < source.length; i++) {
     const ch = source[i];
+    // Skip comments when not inside a string — otherwise a straight apostrophe
+    // in a // comment (e.g. "de l'app") is misread as a string and desyncs the
+    // brace count (truncating RENEGADE_DB mid-object).
+    if (!inStr) {
+      if (ch === '/' && source[i + 1] === '/') {
+        while (i < source.length && source[i] !== '\n') i++;
+        prev = ''; continue;
+      }
+      if (ch === '/' && source[i + 1] === '*') {
+        i += 2;
+        while (i < source.length && !(source[i - 1] === '*' && source[i] === '/')) i++;
+        prev = ''; continue;
+      }
+    }
     if (inStr) {
       if (ch === inStr && prev !== '\\') inStr = null;
     } else if (ch === '"' || ch === "'" || ch === '`') {
